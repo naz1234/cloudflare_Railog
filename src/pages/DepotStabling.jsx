@@ -75,6 +75,7 @@ import "../pstDepotDivider.css";
 import "../insertionMaintenanceSticky.css";
 import "../insertionReqHeader.css";
 import "../insertionReferenceSlate.css";
+import "../insertion3K1Pill.css";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
@@ -5562,16 +5563,18 @@ function sortInsertionLogByTime(logLines = []) {
 // ── Insertion Tab Components ─────────────────────────────────────────────────
 
 // Special insertion remark colours for the live insertion TID/remark pill.
-// 3K1 = teal, SW/2W = purple, matching the insertion design reference.
+// 3K1 = muted amber, SW/2W = purple.
 // Numeric TID colours below apply on Sunday–Thursday only.
 // Friday and Saturday keep the normal yellow in-app TID remark colour.
+const INSERTION_3K1_PILL_STYLE = {
+  bg: "#3A2A12",
+  border: "#8C6A2A",
+  color: "#F3D08A",
+  shadow: "none",
+};
+
 const INSERTION_REMARK_STYLES = {
-  "3K1": {
-    bg: "rgba(13, 148, 136, 0.28)",
-    border: "#14d8bd",
-    color: "#d7fff8",
-    shadow: "0 0 10px rgba(20, 216, 189, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
-  },
+  "3K1": INSERTION_3K1_PILL_STYLE,
   SW: {
     bg: "rgba(88, 28, 135, 0.58)",
     border: "#a855f7",
@@ -5752,12 +5755,7 @@ const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
     color: "#f6e8ff",
     shadow: "0 0 10px rgba(168, 85, 247, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
-  "3K1": {
-    bg: "rgba(20, 216, 189, 0.18)",
-    border: "#2dd4bf",
-    color: "#ccfbf1",
-    shadow: "0 0 10px rgba(45, 212, 191, 0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
-  },
+  "3K1": INSERTION_3K1_PILL_STYLE,
 };
 
 const INSERTION_DEPOT_TID_PILL_STYLES = {
@@ -6985,7 +6983,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <div
-                    className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                    className="theme-insertion-3k1-pill rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
                       width: "100%",
                       maxWidth: "100%",

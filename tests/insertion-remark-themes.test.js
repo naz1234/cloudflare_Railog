@@ -17,13 +17,16 @@ const activeEntry = page.slice(page.indexOf('function getActiveInsertionEntryFor
 const trackingId = page.slice(page.indexOf('function getInsertionTrackingId('), page.indexOf('const INSERTION_PANEL_COLORS'));
 const actualHelpers = new Function('normalizeTrainId', `${activeEntry}\n${trackingId}\nreturn {getActiveInsertionEntryForCell,getInsertionTrackingId};`)(normalizeTrainId);
 const reference = { bg: '#3f2456', border: '#c084fc', color: '#faf5ff', lightColor: '#3b0764', shadow: 'none' };
+const threeK1Palette = new Function(`return ${page.match(/const INSERTION_3K1_PILL_STYLE = (\{[\s\S]*?\n\});/)[1]};`)();
+const keywordSource = page.slice(page.indexOf('function getEastInsertionKeywordRemarkLabel('), page.indexOf('function getInsertionKeywordRemarkLabels('));
+const getEastInsertionKeywordRemarkLabel = new Function(`${keywordSource}\nreturn getEastInsertionKeywordRemarkLabel;`)();
 const helpers = {
   ...actualHelpers, getStablingRemarkTheme, normalizeTrainId, WEST_ROADS: ['WD-ST15'],
   getInsertionRemarkStyle: () => null,
   getInsertionAssistRemarkStyle: label => label === 'ED' ? reference : null,
   getInsertionTidReferenceTooltipLabel: () => 'Departure time: 05:00 · ED',
   requestColorRgb: () => ({ r: 79, g: 142, b: 247 }),
-  getEastInsertionKeywordRemarkLabel: () => '',
+  getEastInsertionKeywordRemarkLabel,
   getMainStablingRemarkLabel: item => item.badgeText || item.displayType || item.typeKey || '',
   getMainStablingRemarkPillStyle: () => ({ background: '#a3e635' }),
   getInsertionTidBigPillStyle: style => style || {},
@@ -38,7 +41,7 @@ const helpers = {
   HiddenRequestRemarks: () => null,
   Undo2, ArrowRight, Plus,
   INSERTION_PANEL_COLORS: { cardBorder: '#27475d', gridLine: '#183449' },
-  EAST_INSERTION_KEYWORD_REMARK_STYLES: { SWEEP: reference },
+  EAST_INSERTION_KEYWORD_REMARK_STYLES: { SWEEP: reference, '3K1': threeK1Palette },
   EAST_INSERTION_TIME_PILL_STYLE: reference,
   getEastInsertionPillStyle: () => ({}),
 };
@@ -144,4 +147,34 @@ test('INS shares exact REQ palettes only in dark mode and yields surfaces/divide
     }
   }
   assert.ok(rules[4].selectors[1].endsWith('> .theme-insertion-card-header > .theme-insertion-card-divider'));
+});
+
+test('both INS depots keep the two-line editable 3K1 pill and use the exact muted amber palette', () => {
+  assert.deepEqual(threeK1Palette, { bg: '#3A2A12', border: '#8C6A2A', color: '#F3D08A', shadow: 'none' });
+  for (const depot of ['west', 'east']) {
+    const road = depot === 'west' ? 'WD-ST15' : 'ED-ST02';
+    const html = renderCell(depot, [{ badgeText: '3K1' }], {
+      insertionLog: [{ key: `ins-${road}-0`, trainKey: 'T45', remark: '3K1', time: '04:19' }],
+    });
+    assert.match(html, /theme-insertion-3k1-pill rounded-lg border px-2 py-1\.5 text-center font-normal leading-tight/);
+    assert.match(html, /background:#3A2A12;border-color:#8C6A2A;color:#F3D08A;box-shadow:none/);
+    assert.match(html, /aria-label="3K1 insertion details"/);
+    assert.match(html, />3K1<\/div>/);
+    assert.match(html, />Time :<\/span>/);
+    assert.match(html, /value="04:19"/);
+    assert.match(html, /title="Edit 3K1 insertion completion time"/);
+    assert.doesNotMatch(html, /theme-insertion-tracking-footer|class="theme-stabling-remark /);
+  }
+  assert.equal((page.match(/"3K1": INSERTION_3K1_PILL_STYLE/g) || []).length, 2);
+  const amberRules = [];
+  postcss.parse(readFileSync(new URL('../src/insertion3K1Pill.css', import.meta.url), 'utf8')).walkRules(rule => amberRules.push(rule));
+  assert.equal(amberRules.length, 3);
+  for (const rule of amberRules) {
+    assert.ok(rule.selector.startsWith('html[data-app-theme] #root .theme-insertion-page .theme-insertion-3k1-pill'));
+    assert.ok(rule.nodes.every(({ prop }) => ['background', 'border-color', 'box-shadow', 'color', '-webkit-text-fill-color'].includes(prop)));
+    assert.doesNotMatch(rule.selector, /tracking-footer|theme-stabling-remark|theme-insertion-card/);
+  }
+  assert.ok(amberRules[0].nodes.some(({ prop, value, important }) => prop === 'color' && value === threeK1Palette.color.toLowerCase() && important));
+  assert.deepEqual(amberRules[2].nodes.map(({ prop, value }) => [prop, value]), [['background', '#49361a'], ['border-color', '#a37f37']]);
+  assert.match(page, /import "\.\.\/insertion3K1Pill\.css";/);
 });
