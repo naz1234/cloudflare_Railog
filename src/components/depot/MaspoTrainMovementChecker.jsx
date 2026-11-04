@@ -49,8 +49,11 @@ async function copyText(text) {
   textarea.style.opacity = "0";
   document.body.appendChild(textarea);
   textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
+  try {
+    if (!document.execCommand("copy")) throw new Error("Copy failed.");
+  } finally {
+    textarea.remove();
+  }
 }
 
 export default function MaspoTrainMovementChecker() {
@@ -386,10 +389,11 @@ export default function MaspoTrainMovementChecker() {
                 <button
                   type="button"
                   onClick={copySummary}
-                  className="theme-maspo-train-checker-copy inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-violet-500/35 bg-violet-950/25 px-3.5 text-[10px] font-semibold text-white transition-colors hover:border-violet-400/65 hover:bg-violet-950/50"
+                  data-copy-state={copied ? "copied" : "idle"}
+                  className="theme-maspo-train-checker-copy slate-copy-feedback inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-violet-500/35 bg-violet-950/25 px-3.5 text-[10px] font-semibold text-white transition-colors hover:border-violet-400/65 hover:bg-violet-950/50"
                 >
                   {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? "Copied" : "Copy"}
+                  <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
                 </button>
                 <span className="theme-maspo-train-checker-chronological inline-flex h-9 items-center gap-2 rounded-lg border border-[#2a3a45] bg-[#071018] px-3.5 text-[10px] font-semibold text-white">
                   <ArrowUpDown className="h-4 w-4" /> Chronological
@@ -426,7 +430,7 @@ export default function MaspoTrainMovementChecker() {
                         <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Movement ref</p>
                         <p className="mt-1.5 break-all font-mono text-[11px] font-semibold text-violet-300">{latest.reference}</p>
                       </div>
-                      <button type="button" onClick={() => copyReference(latest.reference)} className="theme-maspo-train-checker-ref-copy inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/35 bg-violet-950/25 text-[#d5e0e8] transition-colors hover:border-violet-400/65 hover:text-violet-200" aria-label={`Copy movement reference ${latest.reference}`}>
+                      <button type="button" onClick={() => copyReference(latest.reference)} data-copy-state={copiedReference === latest.reference ? "copied" : "idle"} className="theme-maspo-train-checker-ref-copy slate-copy-feedback inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/35 bg-violet-950/25 text-[#d5e0e8] transition-colors hover:border-violet-400/65 hover:text-violet-200" aria-label={`Copy movement reference ${latest.reference}`}>
                         {copiedReference === latest.reference ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
@@ -462,7 +466,7 @@ export default function MaspoTrainMovementChecker() {
                               <td className="px-3 py-3.5">
                                 <div className="flex items-center justify-between gap-3">
                                   <span className="break-all font-mono text-[11px] font-medium text-violet-300">{record.reference}</span>
-                                  <button type="button" onClick={() => copyReference(record.reference)} className="theme-maspo-train-checker-ref-copy inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/35 bg-violet-950/25 text-[#d5e0e8] transition-colors hover:border-violet-400/65 hover:text-violet-200" aria-label={`Copy movement reference ${record.reference}`}>
+                                  <button type="button" onClick={() => copyReference(record.reference)} data-copy-state={copiedReference === record.reference ? "copied" : "idle"} className="theme-maspo-train-checker-ref-copy slate-copy-feedback inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/35 bg-violet-950/25 text-[#d5e0e8] transition-colors hover:border-violet-400/65 hover:text-violet-200" aria-label={`Copy movement reference ${record.reference}`}>
                                     {copiedReference === record.reference ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                   </button>
                                 </div>

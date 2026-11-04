@@ -12854,12 +12854,13 @@ function TrainMovementContent() {
         return next;
       });
       delete copyFeedbackTimerRef.current[key];
-    }, 1600);
+    }, key.startsWith("tp1-") ? 2500 : 1600);
   };
 
   const getCopyFeedbackLabel = (feedbackKey, fallbackLabel) => {
     const status = copyFeedback[feedbackKey];
-    if (status === "copied") return "copied !";
+    if (status === "copied") return "Copied";
+    if (status === "failed") return "Copy failed";
     if (status === "empty") return "no log !";
     return fallbackLabel;
   };
@@ -13042,19 +13043,6 @@ function TrainMovementContent() {
     if (!window.confirm(`Clear all ${operationLabel} logs for West and East Depot?`)) return;
     captureMovementScrollPosition();
     setEntries((prev) => prev.filter((entry) => entry.operation !== operation));
-  };
-
-  const copyTextToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
   };
 
   const copyMovementPreview = async (operation) => {
@@ -13279,8 +13267,8 @@ function TrainMovementContent() {
     const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
       ? requestedMovementType
       : getTp1MovementType();
-    await copyTextToClipboard(buildTp1MovementText({ preview: true, movementType }));
-    showCopyFeedback(`tp1-preview-${movementType}`, "copied");
+    const copied = await copyTextToClipboard(buildTp1MovementText({ preview: true, movementType }));
+    showCopyFeedback(`tp1-preview-${movementType}`, copied ? "copied" : "failed");
   };
 
   const copyTp1MovementLogs = async (requestedMovementType = "") => {
@@ -13295,18 +13283,8 @@ function TrainMovementContent() {
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(lines.join("\n\n"));
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = lines.join("\n\n");
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-
-    showCopyFeedback(feedbackKey, "copied");
+    const copied = await copyTextToClipboard(lines.join("\n\n"));
+    showCopyFeedback(feedbackKey, copied ? "copied" : "failed");
   };
 
   const handleDownloadTp1AutomaticExcel = () => {
@@ -14784,10 +14762,11 @@ function TrainMovementContent() {
               <button
                 type="button"
                 onClick={() => copyTp1MovementPreview(movementType)}
-                className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
+                data-copy-state={copyFeedback[`tp1-preview-${movementType}`] || "idle"}
+                className="slate-copy-feedback inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
               >
-                <MovementIcon type="copy" color="currentColor" />
-                {getCopyFeedbackLabel(`tp1-preview-${movementType}`, "Copy")}
+                <MovementIcon type={copyFeedback[`tp1-preview-${movementType}`] === "copied" ? "check" : "copy"} color="currentColor" />
+                <span aria-live="polite">{getCopyFeedbackLabel(`tp1-preview-${movementType}`, "Copy")}</span>
               </button>
               <button
                 type="button"
@@ -14813,10 +14792,11 @@ function TrainMovementContent() {
                 <button
                   type="button"
                   onClick={() => copyTp1MovementLogs(movementType)}
-                  className={tp1LogPillButtonClass}
+                  data-copy-state={copyFeedback[`tp1-all-${movementType}`] || "idle"}
+                  className={`slate-copy-feedback ${tp1LogPillButtonClass}`}
                   style={{ borderColor: `${accent}70`, color: "#ffffff", background: `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
                 >
-                  <MovementIcon type="copy" color="currentColor" />{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}
+                  <MovementIcon type={copyFeedback[`tp1-all-${movementType}`] === "copied" ? "check" : "copy"} color="currentColor" /><span aria-live="polite">{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}</span>
                 </button>
                 {isAutomatic && (
                   <button
