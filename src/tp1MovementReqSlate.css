@@ -1,0 +1,104 @@
+/* Approved REQ-style MOV windows. Scoped to the two TP1 workflows;
+   state, timing, log output, sync and the MASPO checker are unchanged. */
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] {
+  --mov-bg: #0b2133;
+  --mov-line: #2a506b;
+  --mov-text: #f0f7fd;
+  --mov-muted: #90b2ca;
+  --mov-field: #071a2a;
+  --mov-hover: #14364c;
+  min-width: 0;
+}
+html[data-app-theme="light"] #root .theme-train-movement-page[data-movement-design="req-slate"] {
+  --mov-bg: #ffffff;
+  --mov-line: #b9cede;
+  --mov-text: #16334b;
+  --mov-muted: #526f84;
+  --mov-field: #f5f9fc;
+  --mov-hover: #e5f1f8;
+}
+
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] { gap:16px; align-items:start; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-window { --mode:#7edbb7; --mode-line:#2f6a60; --mode-bg:#10352f; height:auto; border:1px solid var(--mov-line)!important; border-radius:18px; background:var(--mov-bg)!important; color:var(--mov-text); font-family:Arial,sans-serif; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-window[data-movement-mode="manual"] { --mode:#edc480; --mode-line:#796137; --mode-bg:#342c1b; }
+html[data-app-theme="light"] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-window { --mode:#187050; --mode-bg:#e9f7f1; --mode-line:#9fcdbd; }
+html[data-app-theme="light"] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-window[data-movement-mode="manual"] { --mode:#8e641c; --mode-bg:#fff6e5; --mode-line:#d8bd88; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header { flex-wrap:nowrap; padding:14px 16px; gap:10px; border-color:var(--mov-line)!important; background:transparent!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header>div:first-child { min-width:0; gap:9px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header>div:first-child>div:first-child { width:30px; height:30px; border:1px solid var(--mov-line); border-radius:9px; color:var(--mov-muted)!important; background:var(--mov-hover)!important; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header svg { width:15px; height:15px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header h2 { font-size:15px; line-height:20px; font-weight:600; color:var(--mov-text)!important; letter-spacing:0; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header p { font-size:10px; font-weight:400; color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-required-progress { padding:4px 7px; border-radius:6px; font-size:10px; font-weight:500; color:var(--mode)!important; background:var(--mode-bg)!important; border-color:var(--mode-line)!important; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header>div:last-child>span:not(.theme-tp1-required-progress) { font-size:10px; font-weight:500; border:0; border-radius:0; border-left:1px solid var(--mov-line); margin-left:2px; padding:4px 8px; background:transparent!important; color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header button { font-size:10px; font-weight:400; letter-spacing:0; text-transform:none; border-radius:7px; padding:5px 9px; border-color:#75404b!important; color:#e8a2ae!important; background:#302333!important; transform:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-body { display:block; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] :is(.theme-tp1-movement-body,.theme-tp1-movement-flow) { background:transparent!important; background-image:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-flow>section { padding:14px 16px 0; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-section-heading { margin-bottom:10px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-section-heading>span:first-child { font-size:10px; font-weight:600; letter-spacing:.08em; color:var(--mode)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-section-heading>span:last-child { background:var(--mov-line)!important; opacity:.6; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-connector { display:none; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-flow section>div.grid>div.grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-flow section>div.grid { row-gap:10px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-flow section>div.grid>div>div.my-0\.5 { margin-top:0; margin-bottom:0; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step { min-width:0; padding:0; border:0!important; border-radius:9px; background:transparent!important; box-shadow:none!important; --tw-ring-shadow:none; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step>div:first-child { margin-bottom:5px; min-height:16px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .movement-flow-step-label { gap:5px; font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .movement-flow-step-number { width:15px; height:15px; font-size:8px; font-weight:500; border-color:var(--mov-line)!important; color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check { width:14px; height:14px; border:0; border-radius:50%; background:var(--mode-bg)!important; color:var(--mode)!important; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check svg { width:11px; height:11px; color:var(--mode)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-current-step-badge { padding:1px 5px; font-size:8px; line-height:13px; font-weight:500; letter-spacing:.04em; border-color:#37678c!important; background:var(--mov-hover)!important; color:#9bcff0!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step> :is(.theme-tp1-inline-field,select,input),
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content>div>input,
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step>div>div>.theme-tp1-inline-field { height:32px; min-height:32px; width:100%; padding:0 10px; border:1px solid var(--mov-line)!important; border-radius:8px; background:var(--mov-field)!important; box-shadow:none!important; color:var(--mov-text)!important; font-size:12px; font-weight:500; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step .theme-tp1-inline-field-control { font-size:12px!important; font-weight:500!important; color:var(--mov-text)!important; -webkit-text-fill-color:currentColor!important; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step :is(input,select) { outline-offset:2px; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step :is(input,select):focus-visible { outline:2px solid #5794bc; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-inline-field-control::placeholder { color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step p { margin-top:4px; font-size:9px; font-weight:400; color:var(--mov-muted)!important; line-height:1.45; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content { padding-top:0; margin-top:0; border:0; gap:8px; align-items:center; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-action-pill { min-width:0; flex-shrink:0; padding:7px 8px; border-radius:7px; background:var(--mov-hover)!important; border:1px solid var(--mov-line)!important; color:var(--mov-muted)!important; -webkit-text-fill-color:currentColor!important; font-size:9px; line-height:16px; font-weight:500; letter-spacing:.02em; box-shadow:none!important; transform:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-optional-flow-section { margin:14px 16px 0; padding:12px 0 0!important; border:0; border-top:1px solid var(--mov-line)!important; border-radius:0; background:transparent!important; box-shadow:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-optional-flow-section>div:first-child>span:first-child { color:var(--mov-muted)!important; font-size:10px; font-weight:600; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview { margin-top:14px; padding:14px 16px; border-top:1px solid var(--mov-line); }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview>div:first-child { gap:6px; justify-content:flex-end; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview>div:first-child>p { margin-right:auto; color:var(--mov-muted)!important; font-size:10px; font-weight:600; letter-spacing:.08em; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview button,
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header button { min-width:0; min-height:27px; padding:4px 8px; border:1px solid var(--mov-line)!important; border-radius:7px; font-size:10px; font-weight:500; line-height:16px; letter-spacing:0; text-transform:none; background:var(--mov-hover)!important; color:var(--mov-text)!important; box-shadow:none!important; transform:none!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview button:last-child { border-color:var(--mode-line)!important; background:var(--mode-bg)!important; color:var(--mode)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview-text { max-height:none; padding:12px; border-radius:9px; border-color:var(--mov-line)!important; background:var(--mov-field)!important; color:var(--mov-text)!important; font-size:11px; font-weight:400; line-height:1.65; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log { margin:0 16px 16px; border-radius:10px; border-color:var(--mov-line)!important; background:var(--mov-field)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header { padding:10px 12px; border-color:var(--mov-line)!important; background:var(--mov-bg)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header h4 { font-size:11px; font-weight:600; letter-spacing:.01em; text-transform:none; color:var(--mov-text)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header h4::before { content:''; display:inline-block; width:6px; height:6px; margin-right:6px; border-radius:50%; background:var(--mode); }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header p { margin-top:3px; margin-left:12px; font-size:9px; font-weight:400; color:var(--mov-muted)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-body { background:transparent!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-entry { padding:14px 12px; border-color:var(--mov-line)!important; background:transparent!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-entry pre { font-size:11px; line-height:1.65; font-weight:400; letter-spacing:0; color:var(--mov-text)!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-entry button { width:23px; height:23px; border:1px solid #66414a; border-radius:6px; color:#cf8795; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header button[data-confirm-clear="true"] { color:#ffe6eb!important; border-color:#ba5a6b!important; background:#793044!important; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-preview button:hover,
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header button:hover { filter:brightness(1.15); }
+
+@media (min-width: 1000px) {
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header { flex-wrap: wrap; padding: 12px; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header > div:first-child { width: 100%; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-header > div:last-child { margin-left: 39px; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-flow section > div.grid > div.grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-movement-log-header { flex-wrap: wrap; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content { flex-wrap: wrap; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content > div { flex-basis: 100%; }
+
+  /* Keep phone touch targets and 16px inputs, avoiding iPhone focus zoom. */
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step > :is(.theme-tp1-inline-field, select, input),
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content > div > input,
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step > div > div > .theme-tp1-inline-field { height: 44px; min-height: 44px; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step .theme-tp1-inline-field-control { font-size: 16px !important; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-inline-field > .theme-tp1-inline-field-control { height: 100%; min-height: 0 !important; }
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] :is(.theme-tp1-movement-header, .theme-tp1-movement-preview, .theme-tp1-movement-log-header) button,
+  html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-action-pill { min-height: 36px; }
+}
