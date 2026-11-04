@@ -706,6 +706,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const workshopCopyTimerRef = useRef(null);
   const groupCopyTimerRef = useRef(null);
   const [editingGroupKey, setEditingGroupKey] = useState("");
+  const [editingGroupSnapshot, setEditingGroupSnapshot] = useState(null);
+  const groupSaveInFlightRef = useRef(false);
   const [groupTitleDraft, setGroupTitleDraft] = useState("");
   const [savingGroupKey, setSavingGroupKey] = useState("");
   const [groupEditError, setGroupEditError] = useState("");
@@ -715,7 +717,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [togglingGroupKey, setTogglingGroupKey] = useState("");
   const [groupVisibilityError, setGroupVisibilityError] = useState({ key: "", message: "" });
   const [groupTrainDraft, setGroupTrainDraft] = useState("");
-  const [addingGroupTrains, setAddingGroupTrains] = useState(false);
   const [removingGroupTrainId, setRemovingGroupTrainId] = useState("");
   const [groupTrainMessage, setGroupTrainMessage] = useState({ type: "", text: "" });
   const [groupCopyStatus, setGroupCopyStatus] = useState("");
@@ -1087,10 +1088,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     });
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const requestCategories = groupRequestGroupsByCategory(regularRequestGroups);
-  const editingRequestGroup = regularRequestGroups.find((group) => group.key === editingGroupKey) || null;
+  const editingGroupSource = editingGroupSnapshot || regularRequestGroups.find((group) => group.key === editingGroupKey);
+  const editingGroupRequestIds = new Set((editingGroupSource?.items || []).map((request) => request.id).filter(Boolean));
+  // Keep the dialog and all original members available during a rename, including
+  // a partially failed rename that temporarily splits the heading into two groups.
+  const editingRequestGroup = editingGroupKey && editingGroupSource ? {
+    ...editingGroupSource,
+    key: editingGroupKey,
+    items: requests.filter((request) => {
+      const label = cleanRequestLabel(request?.groupTitle) || displayType(request);
+      const key = normalizeRequestIdentity(label) || label.toUpperCase();
+      return editingGroupRequestIds.has(request.id) || key === editingGroupKey;
+    }),
+  } : null;
   const connectedRequestGroup = regularRequestGroups.find((group) => group.key === stablingHoverGroup?.key) || null;
-  const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey === editingRequestGroup.key);
-  const groupEditorBusy = savingGroupTitle || addingGroupTrains || Boolean(removingGroupTrainId);
+  const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey);
+  const groupEditorBusy = savingGroupTitle || Boolean(removingGroupTrainId);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
     const trainList = workshopRequests
@@ -1119,10 +1132,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const beginGroupTitleEdit = (group) => {
-    if (savingGroupKey || deletingGroupKey || togglingGroupKey || addingGroupTrains || removingGroupTrainId) return;
+    if (savingGroupKey || deletingGroupKey || togglingGroupKey || removingGroupTrainId) return;
     setConfirmDeleteGroupKey("");
     setGroupDeleteError("");
     setEditingGroupKey(group.key);
+    setEditingGroupSnapshot(group);
     setGroupTitleDraft(group.label);
     setGroupEditError("");
     setGroupTrainDraft("");
@@ -1132,8 +1146,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const cancelGroupTitleEdit = () => {
-    if (savingGroupKey || addingGroupTrains || removingGroupTrainId) return;
+    if (savingGroupKey || removingGroupTrainId || groupSaveInFlightRef.current) return;
     setEditingGroupKey("");
+    setEditingGroupSnapshot(null);
     setGroupTitleDraft("");
     setGroupEditError("");
     setGroupTrainDraft("");
@@ -1145,6 +1160,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const beginGroupDelete = (group) => {
     if (savingGroupKey || deletingGroupKey || togglingGroupKey) return;
     setEditingGroupKey("");
+    setEditingGroupSnapshot(null);
     setGroupTitleDraft("");
     setGroupEditError("");
     setConfirmDeleteGroupKey(group.key);
@@ -1206,62 +1222,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const addTrainsToEditingGroup = async () => {
-    const group = editingRequestGroup;
-    if (!group || typeof onAdd !== "function") {
-      setGroupTrainMessage({ type: "error", text: "Adding trains is unavailable." });
-      return;
-    }
-
-    const requestedTrainIds = [...new Set(
-      groupTrainDraft.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean)
-    )];
-    if (requestedTrainIds.length === 0) {
-      setGroupTrainMessage({ type: "error", text: "Enter at least one train ID." });
-      return;
-    }
-
-    const sourceRequest = group.items?.[0] || {};
-    const sourceTypeKey = normalizeRequestIdentity(displayType(sourceRequest));
-    const alreadyHasRequestType = (trainIdToCheck) => requests.some((request) =>
-      normalizeTrainId(request?.trainId || "") === trainIdToCheck &&
-      normalizeRequestIdentity(displayType(request)) === sourceTypeKey
-    );
-    const newTrainIds = requestedTrainIds.filter((trainIdToCheck) => !alreadyHasRequestType(trainIdToCheck));
-    const skippedTrainIds = requestedTrainIds.filter(alreadyHasRequestType);
-
-    if (newTrainIds.length === 0) {
-      setGroupTrainMessage({ type: "error", text: "Every entered train already has this request type." });
-      return;
-    }
-
-    setAddingGroupTrains(true);
-    setGroupTrainMessage({ type: "", text: "" });
-    const results = await Promise.allSettled(
-      newTrainIds.map((newTrainId) => onAdd({
-        trainId: newTrainId,
-        requestType: sourceRequest.requestType || displayType(sourceRequest),
-        customType: sourceRequest.customType || "",
-        remark: sourceRequest.remark || "",
-        groupTitle: group.label,
-        groupHidden: group.hidden,
-      }))
-    );
-    const addedCount = results.filter((result) => result.status === "fulfilled").length;
-    const failedCount = results.length - addedCount;
-
-    if (addedCount > 0) setGroupTrainDraft("");
-    setGroupTrainMessage({
-      type: failedCount > 0 ? "error" : "success",
-      text: [
-        addedCount > 0 ? `Added ${addedCount} train${addedCount === 1 ? "" : "s"}.` : "",
-        skippedTrainIds.length > 0 ? `Skipped existing: ${skippedTrainIds.join(", ")}.` : "",
-        failedCount > 0 ? `${failedCount} could not be added.` : "",
-      ].filter(Boolean).join(" "),
-    });
-    setAddingGroupTrains(false);
-  };
-
   const removeTrainFromEditingGroup = async (request) => {
     if (!request?.id || typeof onRemove !== "function") {
       setGroupTrainMessage({ type: "error", text: "Removing this train is unavailable." });
@@ -1276,6 +1236,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       setGroupTrainMessage({ type: "success", text: `${trainLabel} removed.` });
       if (editingRequestGroup?.items?.length === 1) {
         setEditingGroupKey("");
+        setEditingGroupSnapshot(null);
         setGroupTitleDraft("");
       }
     } catch (removeError) {
@@ -1288,10 +1249,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const saveGroupTitle = async (event) => {
     event?.preventDefault();
+    if (groupEditorBusy || groupSaveInFlightRef.current) return;
     const group = editingRequestGroup;
     const nextTitle = cleanRequestLabel(groupTitleDraft);
 
-    if (!group) {
+    if (!group || group.items.length === 0) {
       setGroupEditError("This request group is no longer available.");
       return;
     }
@@ -1301,36 +1263,83 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       return;
     }
 
+    const ownedRequestIds = new Set(group.items.map((request) => request.id).filter(Boolean));
     const duplicateGroup = regularRequestGroups.some(
       (candidate) =>
         candidate.key !== group.key &&
-        normalizeRequestIdentity(candidate.label) === normalizeRequestIdentity(nextTitle)
+        normalizeRequestIdentity(candidate.label) === normalizeRequestIdentity(nextTitle) &&
+        candidate.items.some((request) => !ownedRequestIds.has(request.id))
     );
     if (duplicateGroup) {
       setGroupEditError("That main title already exists.");
       return;
     }
 
-    if (nextTitle === group.label) {
+    const titleChanged = nextTitle !== group.label;
+    const requestedTrainIds = [...new Set(
+      groupTrainDraft.split(/[\s,]+/).map(normalizeTrainCompareKey).filter(Boolean)
+    )];
+    const sourceRequest = group.items[0] || {};
+    const sourceTypeKey = normalizeRequestIdentity(displayType(sourceRequest));
+    const newTrainIds = requestedTrainIds.filter((newTrainId) => !requests.some((request) =>
+      normalizeTrainCompareKey(request?.trainId || "") === newTrainId &&
+      normalizeRequestIdentity(displayType(request)) === sourceTypeKey
+    ));
+    if (titleChanged && typeof onRenameGroup !== "function") {
+      setGroupEditError("Main title editing is unavailable.");
+      return;
+    }
+    if (newTrainIds.length > 0 && typeof onAdd !== "function") {
+      setGroupTrainMessage({ type: "error", text: "Adding trains is unavailable." });
+      return;
+    }
+    if (!titleChanged && newTrainIds.length === 0) {
       cancelGroupTitleEdit();
       return;
     }
 
-    if (typeof onRenameGroup !== "function") {
-      setGroupEditError("Main title editing is unavailable.");
-      return;
-    }
-
+    groupSaveInFlightRef.current = true;
     setSavingGroupKey(group.key);
     setGroupEditError("");
+    setGroupTrainMessage({ type: "", text: "" });
     try {
-      await onRenameGroup(group.items, nextTitle);
+      if (titleChanged) {
+        await onRenameGroup(group.items, nextTitle);
+        const nextGroupKey = normalizeRequestIdentity(nextTitle) || nextTitle.toUpperCase();
+        setEditingGroupSnapshot({ ...group, key: nextGroupKey, label: nextTitle });
+        setEditingGroupKey(nextGroupKey);
+      }
+      const results = await Promise.allSettled(newTrainIds.map(async (newTrainId) => onAdd({
+        trainId: newTrainId,
+        requestType: sourceRequest.requestType || displayType(sourceRequest),
+        customType: sourceRequest.customType || "",
+        remark: sourceRequest.remark || "",
+        groupTitle: nextTitle,
+        groupHidden: group.hidden,
+      })));
+      const failedTrainIds = newTrainIds.filter((_id, index) => results[index].status === "rejected");
+      if (failedTrainIds.length > 0) {
+        const addedCount = newTrainIds.length - failedTrainIds.length;
+        setGroupTrainDraft(failedTrainIds.join(", "));
+        setGroupTrainMessage({
+          type: "error",
+          text: [
+            titleChanged ? "Title saved." : "",
+            addedCount > 0 ? `Added ${addedCount} train${addedCount === 1 ? "" : "s"}.` : "",
+            `Could not add: ${failedTrainIds.join(", ")}. Confirm again to retry these trains.`,
+          ].filter(Boolean).join(" "),
+        });
+        return;
+      }
       setEditingGroupKey("");
+      setEditingGroupSnapshot(null);
       setGroupTitleDraft("");
-    } catch (renameError) {
-      console.error("Request parent title rename failed:", renameError);
-      setGroupEditError(renameError?.message || "Unable to rename parent title.");
+      setGroupTrainDraft("");
+    } catch (saveError) {
+      console.error("Request group confirmation failed:", saveError);
+      setGroupEditError(saveError?.message || "Unable to save this request group.");
     } finally {
+      groupSaveInFlightRef.current = false;
       setSavingGroupKey("");
     }
   };
@@ -1994,7 +2003,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </div>
 
               <label htmlFor="request-group-add-trains" className="mt-3 block text-[9px] font-normal uppercase tracking-[0.14em] text-emerald-200">
-                Add train
+                Add trains (optional)
               </label>
               <div className="mt-1.5 flex gap-2">
                 <input
@@ -2006,25 +2015,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     setGroupTrainDraft(event.target.value);
                     setGroupTrainMessage({ type: "", text: "" });
                   }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addTrainsToEditingGroup();
-                    }
-                  }}
                   placeholder="Example: T15, T28"
                   className="h-9 min-w-0 flex-1 rounded-lg border border-emerald-400/65 bg-[#061626] px-3 text-[11px] font-normal uppercase text-white outline-none focus:border-emerald-200 focus:ring-2 focus:ring-emerald-400/35 disabled:cursor-wait disabled:opacity-70"
                 />
-                <button
-                  type="button"
-                  onClick={addTrainsToEditingGroup}
-                  disabled={groupEditorBusy || !groupTrainDraft.trim()}
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg border border-emerald-400 bg-emerald-700 px-3 text-[9px] font-normal uppercase text-white hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
-                >
-                  <Plus className="h-3 w-3" />
-                  {addingGroupTrains ? "Adding…" : "Add"}
-                </button>
               </div>
+              <p className="mt-1.5 text-[9px] font-normal text-[#8fb1c8]">Confirm below to save the title and add these trains together.</p>
 
               {groupTrainMessage.text && (
                 <p
@@ -2055,7 +2050,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-400 bg-emerald-700 px-4 text-[10px] font-normal uppercase text-white shadow-[0_0_12px_rgba(5,150,105,0.24)] hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
               >
                 <Check className="h-3.5 w-3.5" />
-                {savingGroupTitle ? "Saving…" : "Save Title"}
+                {savingGroupTitle ? "Saving…" : "Save title & add trains"}
               </button>
             </div>
           </form>
