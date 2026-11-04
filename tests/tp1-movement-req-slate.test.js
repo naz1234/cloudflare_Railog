@@ -95,3 +95,20 @@ test("selecting a MOV field highlights its existing edge without an inner outlin
   assert.deepEqual(outer.nodes.filter((node) => node.type === "decl").map(({ prop, value, important }) => [prop, value, important]), [["border-color", "#5794bc", true]]);
   assert.doesNotMatch(outer.selector, /button|textarea|maspo/);
 });
+
+test("night-mode completion ticks are brighter green without changing geometry or light-mode styling", () => {
+  let bright;
+  tree.walkRules((node) => {
+    if (node.selector.includes('html[data-app-theme="dark"]') && node.selector.includes(".theme-tp1-step-check")) bright = node;
+  });
+  assert.ok(bright);
+  assert.equal(bright.selectors.length, 2);
+  assert.ok(bright.selectors.every((selector) => selector.includes(scope)));
+  assert.deepEqual(bright.nodes.filter((node) => node.type === "decl").map(({ prop, value, important }) => [prop, value, important]), [["color", "#4dff88", true]]);
+  assert.equal(rule(".theme-tp1-step-check").width, "14px");
+  assert.equal(rule(".theme-tp1-step-check").height, "14px");
+  assert.equal(rule(".theme-tp1-step-check").background, "var(--mode-bg)");
+  assert.equal(rule(".theme-tp1-step-check svg").width, "11px");
+  assert.equal(rule(".theme-tp1-step-check svg").color, "var(--mode)");
+  assert.doesNotMatch(bright.selector, /copy|button|light/);
+});

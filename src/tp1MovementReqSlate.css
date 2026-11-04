@@ -48,6 +48,9 @@ html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .movement-flow-step-number { width:15px; height:15px; font-size:8px; font-weight:500; border-color:var(--mov-line)!important; color:var(--mov-muted)!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check { width:14px; height:14px; border:0; border-radius:50%; background:var(--mode-bg)!important; color:var(--mode)!important; box-shadow:none!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check svg { width:11px; height:11px; color:var(--mode)!important; }
+/* Make completed ticks easier to see at their existing compact size. */
+html[data-app-theme="dark"] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check,
+html[data-app-theme="dark"] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-step-check svg { color:#4dff88!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-current-step-badge { padding:1px 5px; font-size:8px; line-height:13px; font-weight:500; letter-spacing:.04em; border-color:#37678c!important; background:var(--mov-hover)!important; color:#9bcff0!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step> :is(.theme-tp1-inline-field,select,input),
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content>div>input,
