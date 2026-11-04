@@ -84,6 +84,7 @@ import "../stablingSlate.css";
 import "../reqRemarkThemes.css";
 import { getStablingRemarkTheme } from "../lib/reqStablingRemarkTheme";
 import "../movementLogSlate.css";
+import "../tp1MovementReqSlate.css";
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
@@ -14831,6 +14832,7 @@ function TrainMovementContent() {
                 <button
                   type="button"
                   onClick={() => clearTp1MovementLogs(movementType)}
+                  data-confirm-clear={isTp1ConfirmingClear}
                   className={tp1LogPillButtonClass}
                   style={{ borderColor: isTp1ConfirmingClear ? "rgba(248,113,113,0.95)" : `${accent}70`, color: "#ffffff", background: isTp1ConfirmingClear ? "linear-gradient(135deg, rgba(220,38,38,0.86), rgba(127,29,29,0.92))" : `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
                 >
@@ -14869,7 +14871,7 @@ function TrainMovementContent() {
 
 
   return (
-    <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2">
+    <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2" data-movement-design="req-slate">
       {renderTp1MovementWindow("automatic")}
       {renderTp1MovementWindow("manual")}
       <div className="col-span-full flex min-w-0 justify-center">
