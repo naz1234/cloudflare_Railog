@@ -209,4 +209,7 @@
   html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-elog-style-picker { border-color: var(--pst-slate-line); background: var(--pst-slate-control) !important; }
   html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-elog-style-button-active { border-color: var(--pst-slate-line) !important; background: var(--pst-slate-active) !important; color: var(--pst-slate-active-text) !important; box-shadow: none !important; }
   html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-section,.pst-excel-format-panel,.theme-apu-mismatch-panel,.pst-clean-shell,.pst-manual-shell) :is(input,button,select):focus-visible { outline: 2px solid var(--pst-slate-focus); outline-offset: 2px; }
+  /* The search already has an outer status border; avoid a second box inside it. */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search .theme-stabling-search-input:focus-visible { outline: none; outline-offset: 0; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search.is-empty:focus-within { border-color: var(--pst-slate-focus) !important; }
 }
