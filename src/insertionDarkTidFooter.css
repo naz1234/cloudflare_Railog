@@ -1,4 +1,4 @@
-/* Night-mode Option A: original violet for added IDs; cyan for pending IDs.
+/* Night-mode Option A: original violet for added IDs; muted teal for pending IDs.
  * Keep the existing pill geometry and semantic timetable dots unchanged. */
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style {
@@ -59,23 +59,33 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing {
-  border-color: #38bdf8 !important;
-  color: #bae6fd !important;
-  background: #0c334d !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+  border: 1px solid #31676d !important;
+  color: #93c5c4 !important;
+  background: #133138 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing:not([data-has-custom-value="true"]):hover {
+  background: #1a3d44 !important;
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing:focus-within {
-  border-color: #67e8f9 !important;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18) !important;
+  border-color: #31676d !important;
+  box-shadow: none !important;
+}
+
+/* Keep a crisp keyboard focus indicator without restoring a cyan glow. */
+html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing:not([data-has-custom-value="true"]):focus-within {
+  outline: 1px solid #93c5c4;
+  outline-offset: 2px;
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing input.theme-insertion-tid-input {
-  color: #bae6fd !important;
-  -webkit-text-fill-color: #bae6fd !important;
+  color: #93c5c4 !important;
+  -webkit-text-fill-color: #93c5c4 !important;
 }
 
-/* Custom entries use a purple pill; the default Tracking ID prompt stays cyan. */
+/* Custom entries keep their purple pill; the default Tracking ID prompt stays teal. */
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing[data-has-custom-value="true"] {
   background: #4c1d95 !important;
   border-color: #a78bfa !important;
@@ -92,8 +102,8 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input::placeholder {
-  color: #bae6fd !important;
-  -webkit-text-fill-color: #bae6fd !important;
+  color: #93c5c4 !important;
+  -webkit-text-fill-color: #93c5c4 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

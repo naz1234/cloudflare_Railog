@@ -24,7 +24,7 @@ test('custom text or numbers switch colour and clearing the value returns to the
   assert.match(page, /onTidChange\(road, bi, e\.target\.value\)/);
 });
 
-for (const [theme, colour, promptColour] of [['dark', '#fde68a', '#bae6fd'], ['light', '#ffffff', '#fde68a']]) {
+for (const [theme, colour, promptColour] of [['dark', '#fde68a', '#93c5c4'], ['light', '#ffffff', '#fde68a']]) {
   test(`${theme} custom-value rule changes only editable font colour and preserves the Tracking ID prompt`, () => {
     const css = readFileSync(new URL(`../src/insertion${theme === 'dark' ? 'Dark' : 'Light'}TidFooter.css`, import.meta.url), 'utf8');
     const parsed = postcss.parse(css);
@@ -43,7 +43,7 @@ for (const [theme, colour, promptColour] of [['dark', '#fde68a', '#bae6fd'], ['l
   });
 }
 
-for (const [theme, background, originalBackground] of [['dark', '#4c1d95', '#0c334d'], ['light', '#6d28d9', '#5b3b0c']]) {
+for (const [theme, background, originalBackground] of [['dark', '#4c1d95', '#133138'], ['light', '#6d28d9', '#5b3b0c']]) {
   test(`${theme} custom entries use a purple pill while unchanged Tracking ID keeps its original background`, () => {
     const css = readFileSync(new URL(`../src/insertion${theme === 'dark' ? 'Dark' : 'Light'}TidFooter.css`, import.meta.url), 'utf8');
     const rules = postcss.parse(css).nodes.filter(node => node.type === 'rule');
