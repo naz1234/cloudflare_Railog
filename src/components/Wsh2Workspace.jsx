@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3, Check, Clock3, Download, Droplets, FileSpreadsheet, Loader2, Printer, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { BarChart3, Check, Clock3, Download, Droplets, FileSpreadsheet, Loader2, Printer, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
 import { formatWashDate, formatWashTime, groupWashRows, selectWashPrintRows, summarizeWashRows, WSH2_LOCATIONS, WSH2_MAX_FILE_BYTES } from '../lib/wsh2Records.js';
 import Wsh2PrintDialog from './Wsh2PrintDialog.jsx';
 import Wsh2WashDetailsInput from './Wsh2WashDetailsInput.jsx';
 import Wsh2BatchCompletion from './Wsh2BatchCompletion.jsx';
 import { buildWashBatchPlan } from '../lib/wsh2BatchCompletion.js';
+import { findWashTrainMatches, normalizeWashTrainSearch } from '../lib/wsh2TrainSearch.js';
 import '../wsh2.css';
 
 const API = `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/wsh2`;
@@ -22,9 +23,9 @@ async function request(options = {}) {
   } finally { clearTimeout(timer); }
 }
 
-function WashRow({ row, index, pending, onChange }) {
+function WashRow({ row, index, pending, onChange, highlighted = false }) {
   const location = String(row.location || '').trim().toUpperCase();
-  return <tr className={row.completed ? 'wsh2-completed' : ''}>
+  return <tr className={[row.completed && 'wsh2-completed', highlighted && 'wsh2-search-match'].filter(Boolean).join(' ')}>
     <td className="wsh2-number">{index + 1}</td>
     <th scope="row"><span className="wsh2-train">{row.trainNumber}</span></th>
     <td className="wsh2-time">{formatWashTime(row.nextWash)}</td>
@@ -53,6 +54,7 @@ function WashRow({ row, index, pending, onChange }) {
 
 export default function Wsh2Workspace() {
   const [rows, setRows] = useState([]);
+  const [trainSearch, setTrainSearch] = useState('');
   const [uploads, setUploads] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -164,6 +166,8 @@ export default function Wsh2Workspace() {
   }
 
   const groups = useMemo(() => groupWashRows(rows), [rows]);
+  const matchedRowIds = useMemo(() => findWashTrainMatches(rows, trainSearch), [rows, trainSearch]);
+  const searchedTrain = normalizeWashTrainSearch(trainSearch) || trainSearch;
   const { completed: doneCount, remaining: remainingCount, progress: progressPercent } = summarizeWashRows(rows);
   const filesBusy = uploading || Boolean(deleting) || batching || pending.size > 0;
 
@@ -242,10 +246,20 @@ export default function Wsh2Workspace() {
     <Wsh2BatchCompletion rows={rows} uploads={uploads} busy={filesBusy} blocked={loading || syncFailed} onSubmit={completeBatch} />
     </div>
     <div className="wsh2-checklist-panel">
+    <div className="wsh2-train-search" role="search" aria-label="Search wash checklist trains">
+      <label htmlFor="wsh2-train-search"><Search size={16} aria-hidden="true" />Search train</label>
+      <input id="wsh2-train-search" type="search" inputMode="numeric" maxLength={2} autoComplete="off" spellCheck={false}
+        placeholder="01" value={trainSearch} aria-describedby="wsh2-train-search-status"
+        onChange={(event) => setTrainSearch(event.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={() => setTrainSearch((current) => current ? current.padStart(2, '0') : current)}
+        onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setTrainSearch(''); } }} />
+      {trainSearch && <button type="button" className="wsh2-train-search-clear" aria-label="Clear train search" title="Clear train search" onClick={() => setTrainSearch('')}><X size={15} /></button>}
+      <span id="wsh2-train-search-status" role="status" aria-live="polite">{trainSearch ? `${matchedRowIds.size} ${matchedRowIds.size === 1 ? 'match' : 'matches'} · Train ${searchedTrain} · All trains remain visible` : 'Use 01–47 · matches are highlighted'}</span>
+    </div>
     {loading ? <div className="wsh2-empty"><Loader2 size={25} className="animate-spin" /><p>Loading shared wash schedule…</p></div> : !rows.length ? <div className="wsh2-empty"><FileSpreadsheet size={34} /><h2>Upload your wash Excel files</h2><p>Import one or more reports with Train Number and Next Wash columns.<br />Uploading again preserves completed washes.</p></div> : <div className="wsh2-paper">
       {groups.map((group) => <section className="wsh2-date-group" key={group.date} aria-label={`Wash schedule ${formatWashDate(group.date)}`}><header><h2>{formatWashDate(group.date)}</h2><span>{group.rows.filter((row) => row.completed).length} of {group.rows.length} done</span></header>
         <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '12%' }} /><col style={{ width: '16%' }} /><col style={{ width: '14%' }} /><col style={{ width: '14%' }} /><col style={{ width: '14%' }} /><col style={{ width: '26%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Auto ON with Done</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
-          {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} pending={pending.has(row.id) || uploading || Boolean(deleting) || batching} onChange={(changes, revision) => changeRow(row.id, changes, revision)} />)}
+          {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} highlighted={matchedRowIds.has(row.id)} pending={pending.has(row.id) || uploading || Boolean(deleting) || batching} onChange={(changes, revision) => changeRow(row.id, changes, revision)} />)}
         </tbody></table></div></section>)}
       <footer className="wsh2-paper-footer">Wash details: type manually, then press Enter or click outside to save. Print / Word: choose up to two uploaded Excel files for a one-page checklist.</footer>
     </div>}
