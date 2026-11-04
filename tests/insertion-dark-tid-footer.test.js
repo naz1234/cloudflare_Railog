@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import postcss from "postcss";
 
 const mainSource = readFileSync(
   new URL("../src/main.jsx", import.meta.url),
@@ -110,18 +111,34 @@ test("dark semantic dots respect reduced-motion preferences", () => {
   );
 });
 
-test("pending dark-mode TIDs use cyan with readable input, focus and placeholder text", () => {
+test("pending dark-mode TIDs use muted teal without a cyan border or glow", () => {
   const pendingRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing {');
   const focusRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing:focus-within {');
   const inputRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing input.theme-insertion-tid-input {');
   const placeholderRule = extractRule(darkTidFooterSource, 'input.theme-insertion-tid-input::placeholder {');
-  assert.match(pendingRule, /border-color: #38bdf8 !important/);
-  assert.match(pendingRule, /background: #0c334d !important/);
-  assert.match(focusRule, /border-color: #67e8f9 !important/);
-  assert.match(focusRule, /rgba\(56, 189, 248, 0\.18\)/);
-  assert.match(inputRule, /color: #bae6fd !important/);
-  assert.match(inputRule, /-webkit-text-fill-color: #bae6fd !important/);
-  assert.match(placeholderRule, /color: #bae6fd !important/);
+  assert.match(pendingRule, /border: 1px solid #31676d !important/);
+  assert.match(pendingRule, /background: #133138 !important/);
+  assert.match(pendingRule, /box-shadow: none !important/);
+  assert.match(focusRule, /border-color: #31676d !important/);
+  assert.match(focusRule, /box-shadow: none !important/);
+  assert.match(inputRule, /color: #93c5c4 !important/);
+  assert.match(inputRule, /-webkit-text-fill-color: #93c5c4 !important/);
+  assert.match(placeholderRule, /color: #93c5c4 !important/);
+  assert.doesNotMatch(`${pendingRule}${focusRule}`, /#38bdf8|#67e8f9|rgba\(/);
+});
+
+test("muted teal changes colour only, has subtle hover and preserves a non-glowing focus indicator", () => {
+  const rules = postcss.parse(darkTidFooterSource).nodes.filter(node => node.type === 'rule');
+  const prefix = 'html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing';
+  const pending = rules.find(rule => rule.selector === prefix);
+  assert.deepEqual(pending.nodes.map(decl => decl.prop).sort(), ['background', 'border', 'box-shadow', 'color']);
+  const hover = rules.find(rule => rule.selector === `${prefix}:not([data-has-custom-value="true"]):hover`);
+  assert.deepEqual(hover.nodes.map(decl => [decl.prop, decl.value, decl.important]), [['background', '#1a3d44', true]]);
+  const focus = rules.find(rule => rule.selector === `${prefix}:not([data-has-custom-value="true"]):focus-within`);
+  assert.deepEqual(focus.nodes.map(decl => [decl.prop, decl.value]), [['outline', '1px solid #93c5c4'], ['outline-offset', '2px']]);
+  for (const rule of rules.filter(rule => rule.selector.includes('.is-editing'))) {
+    assert.ok(rule.nodes.every(decl => !['width', 'height', 'min-height', 'padding', 'margin', 'font-size', 'font-weight', 'line-height', 'border-radius', 'gap', 'position', 'transform'].includes(decl.prop)), rule.selector);
+  }
 });
 
 test("light-mode pills keep the existing teal and amber palette", () => {
@@ -143,6 +160,7 @@ test("tracking-pill text meets small-text contrast without recolouring cards or 
   assert.ok(contrast('#f4f8fc', '#22233e') >= 4.5);
   assert.ok(contrast('#f4f8fc', '#17192e') >= 4.5);
   assert.ok(contrast('#b5adf5', '#22233e') >= 4.5);
-  assert.ok(contrast('#bae6fd', '#0c334d') >= 4.5);
+  assert.ok(contrast('#93c5c4', '#133138') >= 4.5);
+  assert.ok(contrast('#93c5c4', '#1a3d44') >= 4.5);
   assert.doesNotMatch(darkTidFooterSource, /theme-insertion-card|theme-stabling-remark/);
 });
