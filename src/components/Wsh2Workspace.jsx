@@ -5,7 +5,7 @@ import Wsh2PrintDialog from './Wsh2PrintDialog.jsx';
 import Wsh2WashDetailsInput from './Wsh2WashDetailsInput.jsx';
 import Wsh2BatchCompletion from './Wsh2BatchCompletion.jsx';
 import { buildWashBatchPlan } from '../lib/wsh2BatchCompletion.js';
-import { findWashTrainMatches, normalizeWashTrainSearch } from '../lib/wsh2TrainSearch.js';
+import { findWashBatchTrainMatches, findWashTrainMatches, normalizeWashTrainSearch } from '../lib/wsh2TrainSearch.js';
 import '../wsh2.css';
 
 const API = `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/wsh2`;
@@ -55,6 +55,7 @@ function WashRow({ row, index, pending, onChange, highlighted = false }) {
 export default function Wsh2Workspace() {
   const [rows, setRows] = useState([]);
   const [trainSearch, setTrainSearch] = useState('');
+  const [batchPreview, setBatchPreview] = useState({ input: '', uploadId: '', date: '' });
   const [uploads, setUploads] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -166,7 +167,9 @@ export default function Wsh2Workspace() {
   }
 
   const groups = useMemo(() => groupWashRows(rows), [rows]);
-  const matchedRowIds = useMemo(() => findWashTrainMatches(rows, trainSearch), [rows, trainSearch]);
+  const searchMatchedRowIds = useMemo(() => findWashTrainMatches(rows, trainSearch), [rows, trainSearch]);
+  const batchMatchedRowIds = useMemo(() => findWashBatchTrainMatches(rows, batchPreview), [rows, batchPreview]);
+  const matchedRowIds = useMemo(() => new Set([...searchMatchedRowIds, ...batchMatchedRowIds]), [searchMatchedRowIds, batchMatchedRowIds]);
   const searchedTrain = normalizeWashTrainSearch(trainSearch) || trainSearch;
   const { completed: doneCount, remaining: remainingCount, progress: progressPercent } = summarizeWashRows(rows);
   const filesBusy = uploading || Boolean(deleting) || batching || pending.size > 0;
@@ -243,7 +246,7 @@ export default function Wsh2Workspace() {
           {confirmDelete === upload.id && <button type="button" disabled={Boolean(deleting)} aria-label={`Cancel deleting ${upload.fileName}`} onClick={() => setConfirmDelete(null)}>Cancel</button>}</div>
       </li>)}</ul> : <p className="wsh2-no-sources">{loading ? 'Loading files…' : 'No Excel files uploaded yet.'}</p>}
     </section>
-    <Wsh2BatchCompletion rows={rows} uploads={uploads} busy={filesBusy} blocked={loading || syncFailed} onSubmit={completeBatch} />
+    <Wsh2BatchCompletion rows={rows} uploads={uploads} busy={filesBusy} blocked={loading || syncFailed} onSubmit={completeBatch} onPreviewChange={setBatchPreview} highlightedCount={batchMatchedRowIds.size} />
     </div>
     <div className="wsh2-checklist-panel">
     <div className="wsh2-train-search" role="search" aria-label="Search wash checklist trains">
@@ -254,7 +257,7 @@ export default function Wsh2Workspace() {
         onBlur={() => setTrainSearch((current) => current ? current.padStart(2, '0') : current)}
         onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setTrainSearch(''); } }} />
       {trainSearch && <button type="button" className="wsh2-train-search-clear" aria-label="Clear train search" title="Clear train search" onClick={() => setTrainSearch('')}><X size={15} /></button>}
-      <span id="wsh2-train-search-status" role="status" aria-live="polite">{trainSearch ? `${matchedRowIds.size} ${matchedRowIds.size === 1 ? 'match' : 'matches'} · Train ${searchedTrain} · All trains remain visible` : 'Use 01–47 · matches are highlighted'}</span>
+      <span id="wsh2-train-search-status" role="status" aria-live="polite">{trainSearch ? `${searchMatchedRowIds.size} ${searchMatchedRowIds.size === 1 ? 'match' : 'matches'} · Train ${searchedTrain} · All trains remain visible` : 'Use 01–47 · matches are highlighted'}</span>
     </div>
     {loading ? <div className="wsh2-empty"><Loader2 size={25} className="animate-spin" /><p>Loading shared wash schedule…</p></div> : !rows.length ? <div className="wsh2-empty"><FileSpreadsheet size={34} /><h2>Upload your wash Excel files</h2><p>Import one or more reports with Train Number and Next Wash columns.<br />Uploading again preserves completed washes.</p></div> : <div className="wsh2-paper">
       {groups.map((group) => <section className="wsh2-date-group" key={group.date} aria-label={`Wash schedule ${formatWashDate(group.date)}`}><header><h2>{formatWashDate(group.date)}</h2><span>{group.rows.filter((row) => row.completed).length} of {group.rows.length} done</span></header>

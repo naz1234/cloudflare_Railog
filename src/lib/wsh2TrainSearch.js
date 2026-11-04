@@ -1,3 +1,5 @@
+import { WSH2_BATCH_MAX_INPUT } from './wsh2BatchCompletion.js';
+
 // Search uses short train numbers (01–47); stored/imported vehicle IDs stay intact.
 export function normalizeWashTrainSearch(value = '') {
   const query = String(value ?? '').trim();
@@ -12,4 +14,12 @@ export function findWashTrainMatches(rows = [], query = '') {
   if (!train) return new Set();
   const vehicle = `L3-MV-${300 + Number(train)}`;
   return new Set(rows.filter((row) => String(row.trainNumber || '').trim().toUpperCase() === vehicle).map((row) => row.id));
+}
+
+// Preview valid tokens while typing; submission still uses the stricter batch validator.
+export function findWashBatchTrainMatches(rows = [], { input = '', uploadId = '', date = '' } = {}) {
+  if (typeof input !== 'string' || input.length > WSH2_BATCH_MAX_INPUT) return new Set();
+  const vehicles = new Set(input.trim().split(/[\s,;]+/).map(normalizeWashTrainSearch).filter(Boolean).map(train => `L3-MV-${300 + Number(train)}`));
+  return new Set(rows.filter(row => (!uploadId || row.sourceUploadId === uploadId) && (!date || row.date === date)
+    && vehicles.has(String(row.trainNumber || '').trim().toUpperCase())).map(row => row.id));
 }
