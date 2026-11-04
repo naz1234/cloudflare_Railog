@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { formatWashDate } from '../lib/wsh2Records.js';
 import { getWashBatchOptions, WSH2_BATCH_MAX_INPUT } from '../lib/wsh2BatchCompletion.js';
 
-export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSubmit }) {
+export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSubmit, onPreviewChange, highlightedCount = 0 }) {
   const options = useMemo(() => getWashBatchOptions(rows, uploads), [rows, uploads]);
   const [selection, setSelection] = useState('');
   const [input, setInput] = useState('');
@@ -12,6 +12,10 @@ export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSu
   const [success, setSuccess] = useState('');
   const option = options.find(item => item.key === selection);
   const disabled = busy || blocked || submitting || !options.length;
+
+  useEffect(() => {
+    onPreviewChange?.({ input, uploadId: option?.uploadId || '', date: option?.date || '' });
+  }, [input, option?.uploadId, option?.date, onPreviewChange]);
 
   async function submit(event) {
     event.preventDefault();
@@ -34,7 +38,8 @@ export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSu
         <option value="">Select Excel file / date</option>
         {options.map(item => <option key={item.key} value={item.key}>{formatWashDate(item.date)} — {item.fileName} ({item.count} trains)</option>)}
       </select></label>
-      <label>Train numbers<textarea aria-label="Completed wash train numbers" value={input} placeholder="01 02 03 04 05" rows={3} maxLength={WSH2_BATCH_MAX_INPUT} disabled={disabled} onChange={event => { setInput(event.target.value); setError(''); setSuccess(''); }} /></label>
+      <label>Train numbers<textarea aria-label="Completed wash train numbers" aria-describedby="wsh2-batch-highlight-status" value={input} placeholder="01 02 03 04 05" rows={3} maxLength={WSH2_BATCH_MAX_INPUT} disabled={disabled} onChange={event => { setInput(event.target.value); setError(''); setSuccess(''); }} /></label>
+      <p id="wsh2-batch-highlight-status" className="wsh2-batch-help" role="status" aria-live="polite">{input.trim() ? `${highlightedCount} matching ${highlightedCount === 1 ? 'row' : 'rows'} highlighted ${option ? 'in the selected file/date' : 'across all dates'}.` : 'Train numbers highlight matching rows as you type.'} Nothing is marked Done until Submit.</p>
       <p className="wsh2-batch-help">Only the selected file/date is updated. Wash details stay manual.</p>
       {error && <p role="alert" className="wsh2-batch-error">{error}</p>}
       {success && <p role="status" className="wsh2-batch-success">{success}</p>}
