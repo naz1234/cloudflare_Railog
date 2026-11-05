@@ -1052,7 +1052,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         ...group,
         items: sortRequestsByStatusThenTrain(
           group.items,
-          (request) => getCrossOutInfo(request).reason,
+          (request) => getCrossOutInfo(request),
           (request) => normalizeTrainCompareKey(request.trainId || ""),
         ),
         hidden: group.items.length > 0 && group.items.every((request) => request?.groupHidden === true),
