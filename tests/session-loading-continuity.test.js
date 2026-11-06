@@ -10,6 +10,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 const require = createRequire(import.meta.url);
 const componentSource = read('src/components/SecureSessionLoading.jsx');
 const routeSource = read('src/components/ProtectedRoute.jsx');
+const workspaceSource = read('src/pages/DepotStabling.jsx');
 const index = read('index.html');
 const login = read('public/login.html');
 const css = read('public/auth/session-loading.css');
@@ -54,6 +55,22 @@ test('initial application HTML contains the loading screen before the JavaScript
   assert.match(root, /Checking your session…/);
   assert.doesNotMatch(root, /<form|<input|stabling|Copy Stabling/);
   assert.ok(index.indexOf('/auth/session-loading.css') < index.indexOf('<div id="root">'));
+});
+
+test('the actual REQ data-loading branch renders the same branded screen after authentication', () => {
+  assert.match(workspaceSource, /import SecureSessionLoading from "\.\.\/components\/SecureSessionLoading";/);
+  const start = workspaceSource.lastIndexOf('  if (!loaded) {');
+  const end = workspaceSource.indexOf('\n  return (', start);
+  assert.ok(start > 0 && end > start, 'Exercise the real data readiness gate, not only ProtectedRoute');
+  const dataLoadingBranch = workspaceSource.slice(start, end);
+  const DataGate = load(`const SecureSessionLoading = require('loading-screen');
+    export default function DataGate({ loaded }) {
+      ${dataLoadingBranch}
+      return <section>LOADED REQ WORKSPACE</section>;
+    }`, { 'loading-screen': Loading });
+  assert.equal(renderToStaticMarkup(React.createElement(DataGate, { loaded: false })), rendered);
+  assert.equal(renderToStaticMarkup(React.createElement(DataGate, { loaded: true })), '<section>LOADED REQ WORKSPACE</section>');
+  assert.doesNotMatch(dataLoadingBranch, /animate-spin|border-4|bg-\[#071828\]/);
 });
 
 test('shared loading styles are scoped, theme-independent, responsive and respect reduced motion', () => {

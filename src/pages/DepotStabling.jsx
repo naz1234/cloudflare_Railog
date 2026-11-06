@@ -10,6 +10,7 @@ import WashingProtectedPage from "../components/WashingProtectedPage";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
+import SecureSessionLoading from "../components/SecureSessionLoading";
 import { getStablingSyncTooltipCopy } from "../lib/stablingSyncTooltip";
 import HiddenRequestRemarks from "../components/HiddenRequestRemarks";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
@@ -22192,11 +22193,7 @@ export default function DepotStablingPage() {
   };
 
   if (!loaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#071828]">
-        <div className="w-8 h-8 border-4 border-[#1a3a56] border-t-[#4f8ef7] rounded-full animate-spin" />
-      </div>
-    );
+    return <SecureSessionLoading />;
   }
 
   return (
