@@ -7,6 +7,91 @@ const source = await readFile(new URL('../public/auth/login.js', import.meta.url
 const STORAGE_KEY = 'l3dcLoginChallenge';
 const START = Date.parse('2026-10-05T09:00:00Z');
 
+test('login HTML initially hides the form behind an accessible session check before scripts execute', async () => {
+  const html = await readFile(new URL('../public/login.html', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../public/auth/login.css', import.meta.url), 'utf8');
+  assert.match(html, /id="login-experience"[^>]* hidden>/);
+  assert.match(html, /id="session-check" role="status" aria-live="polite" aria-busy="true"/);
+  assert.match(html, /id="session-check-heading">Checking your session…/);
+  assert.match(css, /\[hidden\] \{ display: none !important; \}/);
+  assert.ok(html.indexOf('src="/auth/login.js"') < html.indexOf('src="https://challenges.cloudflare.com/'), 'Session restoration must not wait for the third-party login widget script');
+});
+
+test('an existing session never exposes the email form or starts another login security challenge', async () => {
+  const pending = deferred();
+  const app = await setup({ sessionResponse: pending.promise });
+  assert.equal(app.get('login-experience').hidden, true);
+  assert.equal(app.get('session-check').hidden, false);
+  assert.equal(app.get('session-check').getAttribute('aria-busy'), 'true');
+  assert.deepEqual(app.requests.map(request => request.path), ['/api/auth/session']);
+  const challenge = app.storage.get(STORAGE_KEY);
+  pending.resolve(response({ authenticated: true }));
+  await settle();
+  assert.deepEqual(app.navigations, ['/depot?tab=movements#today']);
+  assert.equal(app.get('login-experience').hidden, true);
+  assert.equal(app.storage.get(STORAGE_KEY), challenge);
+  assert.equal(app.timers.size, 0);
+});
+
+test('the login form and saved PIN challenge appear only after the server confirms no session', async () => {
+  const pending = deferred();
+  const app = await setup({ sessionResponse: pending.promise });
+  assert.equal(app.get('login-experience').hidden, true);
+  assert.equal(app.requests.some(request => request.path === '/api/auth/config'), false);
+  pending.resolve(response({ authenticated: false }, 401));
+  await settle();
+  assert.equal(app.get('login-experience').hidden, false);
+  assert.equal(app.get('session-check').hidden, true);
+  assert.equal(app.get('login-card').dataset.stage, 'verify');
+  assert.equal(app.requests.some(request => request.path === '/api/auth/config'), true);
+  assert.equal(app.requests.some(request => request.options?.method === 'POST'), false);
+});
+
+test('session errors and malformed authentication responses show retry rather than a login flash or workspace', async () => {
+  for (const result of [response({ authenticated: true }, 503), response({ authenticated: 'true' }), response({ authenticated: 1 }), response({}), response({ authenticated: false }, 500)]) {
+    const app = await setup({ challenge: null, sessionResponse: result });
+    assert.equal(app.get('login-experience').hidden, true);
+    assert.equal(app.get('session-check-retry').hidden, false);
+    assert.equal(app.get('session-check').getAttribute('aria-busy'), 'false');
+    assert.equal(app.navigations.length, 0);
+    assert.equal(app.requests.some(request => request.path !== '/api/auth/session'), false);
+  }
+});
+
+test('a stalled session check times out without trusting a late response, then permits a fresh retry', async () => {
+  const pending = deferred();
+  let calls = 0;
+  const app = await setup({ challenge: null, sessionResponse: () => ++calls === 1 ? pending.promise : response({ authenticated: true }) });
+  await app.advance(7999);
+  assert.equal(app.get('session-check-retry').hidden, true);
+  await app.advance(1);
+  assert.equal(app.get('session-check-retry').hidden, false);
+  assert.equal(app.get('login-experience').hidden, true);
+  assert.equal(app.requests[0].options.signal.aborted, true);
+  pending.resolve(response({ authenticated: true }));
+  await settle();
+  assert.equal(app.navigations.length, 0);
+  await app.get('session-check-retry').fire('click');
+  assert.deepEqual(app.navigations, ['/depot?tab=movements#today']);
+  assert.equal(app.get('login-experience').hidden, true);
+});
+
+test('network errors can retry into normal login and cannot submit email or code during the session check', async () => {
+  let calls = 0;
+  const app = await setup({ challenge: null, codeOnlyEnabled: true, sessionResponse: () => {
+    if (++calls === 1) throw new Error('Offline');
+    return response({ authenticated: false }, 401);
+  } });
+  app.get('login-email').value = '123456';
+  await app.get('request-form').fire('submit');
+  assert.equal(app.requests.length, 1);
+  await app.get('session-check-retry').fire('click');
+  await settle();
+  assert.equal(app.get('login-experience').hidden, false);
+  assert.equal(app.get('login-card').dataset.stage, 'request');
+  assert.equal(app.requests.some(request => request.options?.method === 'POST'), false);
+});
+
 test('one login field remains visible for normal links and the retired access fragment', async () => {
   for (const options of [
     { codeOnlyEnabled: true },
@@ -152,7 +237,7 @@ test('shared-code network failure clears the field and allows retry with a fresh
 });
 
 const settle = async () => {
-  for (let index = 0; index < 12; index += 1) await Promise.resolve();
+  for (let index = 0; index < 32; index += 1) await Promise.resolve();
 };
 
 function response(data, status = 200, headers = {}) {
@@ -259,6 +344,8 @@ async function setup({
     'request-reference', 'auth-message', 'login-email', 'turnstile-shell', 'turnstile-status',
     'pin-inputs',
     'login-progress',
+    'login-experience', 'session-check', 'session-check-spinner', 'session-check-heading',
+    'session-check-message', 'session-check-retry',
   ];
   ids.forEach((id) => elements.set(id, new Element(id)));
   const get = (id) => elements.get(id);
@@ -281,6 +368,7 @@ async function setup({
 
   const context = vm.createContext({
     URL,
+    AbortController,
     Date: class extends Date { static now() { return now; } },
     document: {
       getElementById: get,
@@ -321,7 +409,7 @@ async function setup({
         authenticated: true, user: { name: 'Code-only access', email: '' },
         expiresAt: new Date(START + 36000000).toISOString(),
       });
-      if (path === '/api/auth/session') return sessionResponse;
+      if (path === '/api/auth/session') return typeof sessionResponse === 'function' ? sessionResponse() : sessionResponse;
       if (path === '/api/auth/request-code') return requestResponse || response({
         challengeId: 'new-opaque-challenge', requestRef: 'def456',
         emailHint: 'oper***@flow-metro.com', expiresInSeconds: 300, resendAfterSeconds: 60,

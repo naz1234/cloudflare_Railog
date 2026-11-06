@@ -7,6 +7,7 @@
   const VERIFY_ANIMATION_MS = 650;
   const DECK_CLOSING_MS = 750;
   const SUCCESS_DISPLAY_MS = 2000;
+  const SESSION_CHECK_TIMEOUT_MS = 8000;
   const CHALLENGE_STORAGE_KEY = 'l3dcLoginChallenge';
   const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
   const GENERIC_REQUEST_ERROR = 'Login is temporarily unavailable. Please try again.';
@@ -39,6 +40,12 @@
   const pinContainer = document.getElementById('pin-inputs');
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
   const loginProgress = document.getElementById('login-progress');
+  const loginExperience = document.getElementById('login-experience');
+  const sessionCheck = document.getElementById('session-check');
+  const sessionCheckSpinner = document.getElementById('session-check-spinner');
+  const sessionCheckHeading = document.getElementById('session-check-heading');
+  const sessionCheckMessage = document.getElementById('session-check-message');
+  const sessionCheckRetry = document.getElementById('session-check-retry');
 
   let expiryDeadline = 0;
   let resendDeadline = 0;
@@ -53,6 +60,8 @@
   let codeOnlyEnabled = false;
   let codeRetryDeadline = 0;
   let codeRetryTimer = 0;
+  let loginReady = false;
+  let checkingSession = false;
 
   function prefersReducedMotion() {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
@@ -270,7 +279,7 @@
     const requestWaitRemaining = remainingSeconds(usesAccessCode ? codeRetryDeadline : resendDeadline);
     const hasValidEntry = usesAccessCode || Boolean(normalizeLoginEmail(emailInput.value));
     emailInput.setAttribute('autocomplete', /^\d+$/.test(emailInput.value.trim()) ? 'off' : 'username');
-    requestButton.disabled = isBusy || !turnstileToken || !hasValidEntry || requestWaitRemaining > 0;
+    requestButton.disabled = !loginReady || isBusy || !turnstileToken || !hasValidEntry || requestWaitRemaining > 0;
     if (!isBusy) {
       requestButton.querySelector('span').textContent = requestWaitRemaining > 0
         ? `Try again in ${formatTime(requestWaitRemaining)}`
@@ -629,7 +638,7 @@
 
   requestForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (isBusy || loginCompleted) return;
+    if (!loginReady || isBusy || loginCompleted) return;
     return readAccessCode() ? signInWithAccessCode() : requestCode();
   });
 
@@ -639,7 +648,7 @@
   verifyForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const code = readPin();
-    if (isBusy || !activeChallengeId || code.length !== PIN_LENGTH || Date.now() >= expiryDeadline) return;
+    if (!loginReady || isBusy || !activeChallengeId || code.length !== PIN_LENGTH || Date.now() >= expiryDeadline) return;
 
     const verifyStartedAt = Date.now();
     const challengeEmail = activeEmail;
@@ -674,16 +683,61 @@
     }
   });
 
-  setStage('request');
-  restoreChallenge();
   if (window.location.hash === '#access') {
     window.history?.replaceState(null, '', window.location.href.split('#')[0]);
   }
-  initializeTurnstile();
 
-  api('/api/auth/session')
-    .then(({ response, data }) => {
-      if (response.ok && data.authenticated === true) window.location.replace(safeReturnPath());
-    })
-    .catch(() => { /* The request-code action will display a generic error if needed. */ });
+  async function checkExistingSession() {
+    if (checkingSession) return;
+    checkingSession = true;
+    loginReady = false;
+    loginExperience.hidden = true;
+    sessionCheck.hidden = false;
+    sessionCheck.setAttribute('aria-busy', 'true');
+    sessionCheckSpinner.hidden = false;
+    sessionCheckHeading.textContent = 'Checking your session…';
+    sessionCheckMessage.textContent = 'Opening your workspace securely.';
+    sessionCheckRetry.hidden = true;
+    sessionCheckRetry.disabled = true;
+    const controller = new AbortController();
+    let timeoutId;
+    try {
+      const { response, data } = await Promise.race([
+        api('/api/auth/session', { signal: controller.signal }),
+        new Promise((_resolve, reject) => {
+          timeoutId = window.setTimeout(() => {
+            controller.abort();
+            reject(new Error('session_check_timeout'));
+          }, SESSION_CHECK_TIMEOUT_MS);
+        }),
+      ]);
+      if (response.ok && data.authenticated === true) {
+        window.location.replace(safeReturnPath());
+        return;
+      }
+      if (response.status !== 401 && !(response.ok && data.authenticated === false)) {
+        throw new Error('session_check_unavailable');
+      }
+      loginReady = true;
+      setStage('request');
+      restoreChallenge();
+      sessionCheck.hidden = true;
+      sessionCheck.setAttribute('aria-busy', 'false');
+      loginExperience.hidden = false;
+      initializeTurnstile();
+    } catch {
+      sessionCheck.setAttribute('aria-busy', 'false');
+      sessionCheckSpinner.hidden = true;
+      sessionCheckHeading.textContent = 'Could not check your session';
+      sessionCheckMessage.textContent = 'Please check your connection and try again.';
+      sessionCheckRetry.hidden = false;
+    } finally {
+      window.clearTimeout(timeoutId);
+      sessionCheckRetry.disabled = false;
+      checkingSession = false;
+    }
+  }
+
+  sessionCheckRetry.addEventListener('click', checkExistingSession);
+  checkExistingSession();
 })();

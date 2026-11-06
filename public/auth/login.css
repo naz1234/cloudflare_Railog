@@ -23,6 +23,11 @@ button { -webkit-tap-highlight-color: transparent; }
 .brand-lockup h1 { margin: 0; font-size: 19px; font-weight: 750; letter-spacing: .035em; }
 .brand-lockup p { margin: 4px 0 0; color: #929fb9; font-size: 10px; letter-spacing: .3em; text-align: center; }
 .login-experience { width: min(510px, 100%); }
+.session-check-panel { width: min(510px, 100%); display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 36px 24px; text-align: center; }
+.session-check-panel h2 { margin: 0; font-size: 20px; font-weight: 600; }
+.session-check-panel p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.session-check-spinner { width: 30px; height: 30px; border: 3px solid #2d3b51; border-top-color: var(--blue); border-radius: 50%; animation: button-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .session-check-spinner { animation: none; } }
 .stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 18px 18px; padding: 0; list-style: none; }
 .stepper li { display: flex; align-items: center; gap: 9px; color: #667086; transition: color 220ms ease; }
 .stepper li > span { font-size: 13px; font-variant-numeric: tabular-nums; color: #6c7892; }
