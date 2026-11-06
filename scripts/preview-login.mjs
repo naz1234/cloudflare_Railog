@@ -15,6 +15,7 @@ const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}
 const assets = new Map([
   ['/auth/login.js', ['../public/auth/login.js', 'text/javascript; charset=utf-8']],
   ['/auth/login.css', ['../public/auth/login.css', 'text/css; charset=utf-8']],
+  ['/auth/session-loading.css', ['../public/auth/session-loading.css', 'text/css; charset=utf-8']],
   ['/favicon.png', ['../public/favicon.png', 'image/png']],
 ]);
 

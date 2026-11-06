@@ -344,6 +344,7 @@ test('custom mode exposes only the exact login shell, app icons and auth endpoin
     new Request('https://railog.example.com/login'),
     new Request('https://railog.example.com/login.html'),
     new Request('https://railog.example.com/auth/login.css'),
+    ...['GET', 'HEAD'].map((method) => new Request('https://railog.example.com/auth/session-loading.css', { method })),
     new Request('https://railog.example.com/auth/login.js'),
     new Request('https://railog.example.com/favicon.png'),
     ...['/favicon.ico', '/apple-touch-icon.png?v=2', '/manifest.json', '/train-icon-192.png', '/train-icon-512.png']
@@ -415,7 +416,7 @@ test('public icon and manifest paths do not allow unauthenticated writes', async
   const middleware = createAuthMiddleware({
     authorizeCustom: async () => ({ authorized: false, reason: 'missing_session', status: 401 }),
   });
-  for (const path of ['/apple-touch-icon.png', '/manifest.json', '/train-icon-192.png', '/train-icon-512.png']) {
+  for (const path of ['/apple-touch-icon.png', '/manifest.json', '/train-icon-192.png', '/train-icon-512.png', '/auth/session-loading.css']) {
     for (const method of ['POST', 'PUT', 'DELETE']) {
       const response = await middleware({
         data: {},
