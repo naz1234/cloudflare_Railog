@@ -52,7 +52,7 @@ test('preview serves actual login assets, injects local-only safety notice and s
   assert.match(html, /src="\/__preview\/turnstile\.js"/);
   assert.doesNotMatch(html, /https:\/\/challenges\.cloudflare\.com/);
 
-  for (const asset of ['/auth/login.js', '/auth/login.css']) {
+  for (const asset of ['/auth/login.js', '/auth/login.css', '/auth/session-loading.css']) {
     const actual = await preview.get(asset);
     assert.equal(actual.status, 200);
     assert.equal(await actual.text(), await readFile(new URL(`../public${asset}`, import.meta.url), 'utf8'));

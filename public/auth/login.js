@@ -41,6 +41,7 @@
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
   const loginProgress = document.getElementById('login-progress');
   const loginExperience = document.getElementById('login-experience');
+  const loginShell = document.getElementById('login-shell');
   const sessionCheck = document.getElementById('session-check');
   const sessionCheckSpinner = document.getElementById('session-check-spinner');
   const sessionCheckHeading = document.getElementById('session-check-heading');
@@ -691,6 +692,7 @@
     if (checkingSession) return;
     checkingSession = true;
     loginReady = false;
+    loginShell.classList.add('session-loading-screen');
     loginExperience.hidden = true;
     sessionCheck.hidden = false;
     sessionCheck.setAttribute('aria-busy', 'true');
@@ -724,6 +726,7 @@
       sessionCheck.hidden = true;
       sessionCheck.setAttribute('aria-busy', 'false');
       loginExperience.hidden = false;
+      loginShell.classList.remove('session-loading-screen');
       initializeTurnstile();
     } catch {
       sessionCheck.setAttribute('aria-busy', 'false');

@@ -21,6 +21,7 @@ test('an existing session never exposes the email form or starts another login s
   const pending = deferred();
   const app = await setup({ sessionResponse: pending.promise });
   assert.equal(app.get('login-experience').hidden, true);
+  assert.equal(app.get('login-shell').classList.contains('session-loading-screen'), true);
   assert.equal(app.get('session-check').hidden, false);
   assert.equal(app.get('session-check').getAttribute('aria-busy'), 'true');
   assert.deepEqual(app.requests.map(request => request.path), ['/api/auth/session']);
@@ -41,6 +42,7 @@ test('the login form and saved PIN challenge appear only after the server confir
   pending.resolve(response({ authenticated: false }, 401));
   await settle();
   assert.equal(app.get('login-experience').hidden, false);
+  assert.equal(app.get('login-shell').classList.contains('session-loading-screen'), false);
   assert.equal(app.get('session-check').hidden, true);
   assert.equal(app.get('login-card').dataset.stage, 'verify');
   assert.equal(app.requests.some(request => request.path === '/api/auth/config'), true);
@@ -344,7 +346,7 @@ async function setup({
     'request-reference', 'auth-message', 'login-email', 'turnstile-shell', 'turnstile-status',
     'pin-inputs',
     'login-progress',
-    'login-experience', 'session-check', 'session-check-spinner', 'session-check-heading',
+    'login-experience', 'login-shell', 'session-check', 'session-check-spinner', 'session-check-heading',
     'session-check-message', 'session-check-retry',
   ];
   ids.forEach((id) => elements.set(id, new Element(id)));

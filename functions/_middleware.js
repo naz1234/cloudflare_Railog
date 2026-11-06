@@ -15,6 +15,7 @@ const customAuthStaticPaths = new Set([
   '/login',
   '/login.html',
   '/auth/login.css',
+  '/auth/session-loading.css',
   '/auth/login.js',
   // Home Screen icon discovery can happen without the browser's session cookie.
   '/favicon.ico',

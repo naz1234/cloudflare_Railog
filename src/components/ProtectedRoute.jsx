@@ -2,16 +2,13 @@ import { useEffect, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import ActionTooltip from '@/components/ActionTooltip';
+import SecureSessionLoading from '@/components/SecureSessionLoading';
 import { useAuth } from '@/lib/AuthContext';
 
 const PRESENCE_POLL_INTERVAL_MS = 30_000;
 const PRESENCE_REQUEST_TIMEOUT_MS = 8_000;
 
-const DefaultFallback = () => (
-  <div className="fixed inset-0 flex items-center justify-center bg-[#041523]" role="status" aria-label="Checking secure session">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1b435d] border-t-cyan-300"></div>
-  </div>
-);
+const DefaultFallback = SecureSessionLoading;
 
 const LoginRedirect = () => {
   useEffect(() => {
