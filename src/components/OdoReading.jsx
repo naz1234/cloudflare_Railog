@@ -392,7 +392,7 @@ export default function OdoReading() {
   );
 
   const buildCopyText = () => {
-    const header1 = `Trainset\t\tFinish ODO Reading at ${displayTime} Hrs (${displayDate})`;
+    const header1 = `(${displayDate})`;
     const rows = TRAINSETS.map((ts) => {
       const val = workshops[ts] ? "WORKSHOP" : mileages[ts] || "";
       return `${ts}\t:\t${val}`;
@@ -628,7 +628,7 @@ export default function OdoReading() {
 
           <div className="mb-2 rounded-lg border border-indigo-400/20 bg-indigo-500/10 px-3 py-2">
             <p className="text-xs font-bold text-slate-100">
-              Finish ODO Reading at <span className="text-indigo-200">{displayTime} Hrs ({displayDate})</span>
+              <span className="text-indigo-200">({displayDate})</span>
             </p>
             <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
               Recorded mileage: {recordedCount} / {nonWorkshopCount} active trainsets
