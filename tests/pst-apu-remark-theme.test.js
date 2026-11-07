@@ -7,6 +7,14 @@ import ts from 'typescript';
 import postcss from 'postcss';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
+const requestHelpers = ['normalizeTrainId', 'cleanRequestLabel', 'getTrainRequestDisplayType', 'getTrainRequestGroupDisplayTitle', 'getRequestApuTrainKeys']
+  .map((name) => {
+    const start = source.indexOf(`function ${name}(`);
+    const end = source.indexOf('\nfunction ', start + 1);
+    assert.ok(start >= 0 && end > start, `${name} must exist`);
+    return source.slice(start, end);
+  }).join('\n');
+const getRequestApuTrainKeys = new Function(`${requestHelpers}\nreturn getRequestApuTrainKeys;`)();
 const cellSource = source.slice(source.indexOf('function PSTCell('), source.indexOf('function PSTStablingSection('));
 const compiled = ts.transpileModule(`const { useState } = React; ${cellSource}\nreturn PSTCell;`, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
@@ -48,13 +56,85 @@ test('both actual PST depot cards detect APU words across active remark labels a
   }
 });
 
-test('only PST APU remarks flag cards; unrelated keywords, empty blocks and other trains do not', () => {
+test('unrelated keywords, empty blocks and other trains do not flag PST cards', () => {
   for (const items of [[], [null], [{ badgeText: 'UNFIT' }], [{ badgeText: 'DEEP CLEAN' }], [{ badgeText: 'Least Priority' }], [{ badgeText: 'CAPUCHIN' }], [{ badgeText: 'APU123' }], [{ badgeText: 'PST' }]]) {
     assert.doesNotMatch(render('west', items), /has-apu-remark/);
   }
   assert.doesNotMatch(render('west', [{ badgeText: 'APU alarm' }], { block: { trainId: '' } }), /has-apu-remark/);
   assert.doesNotMatch(render('east', [], { maintenanceMap: { T6: [{ badgeText: 'APU alarm' }] }, block: { trainId: '05', extraRemark: 'APU' } }), /has-apu-remark/);
   assert.match(source, /const pstMaintenanceMap = buildMaintenanceMap\(\s*pstRequests\.filter\(\(request\) => request\?\.groupHidden !== true\)/);
+});
+
+test('REQ APU detection uses active displayed remark titles and normalized, deduplicated train IDs', () => {
+  const requests = Object.freeze([
+    Object.freeze({ trainId: '01', requestType: 'Other', customType: 'APU alarm' }),
+    Object.freeze({ trainId: ' t 001 ', requestType: 'APU_MISMATCH' }),
+    Object.freeze({ trainId: 'T017', requestType: 'RST CM', groupTitle: 'RST CM / apu no load' }),
+    Object.freeze({ trainId: '02', requestType: 'APU', groupHidden: true }),
+    Object.freeze({ trainId: '03', requestType: 'Deep Clean' }),
+    Object.freeze({ trainId: '04', requestType: 'UNFIT' }),
+    Object.freeze({ trainId: '05', requestType: 'Least Priority' }),
+    Object.freeze({ trainId: '06', requestType: 'APU', groupTitle: 'Renamed to RST PM' }),
+    Object.freeze({ trainId: '07', requestType: 'CAPUCHIN' }),
+    Object.freeze({ trainId: '08', requestType: 'APU123' }),
+    Object.freeze({ trainId: '', requestType: 'APU' }),
+    null,
+  ]);
+  assert.deepEqual([...getRequestApuTrainKeys(requests)], ['T1', 'T17']);
+  for (const invalid of [undefined, null, {}, 'APU']) {
+    assert.deepEqual([...getRequestApuTrainKeys(invalid)], []);
+  }
+});
+
+test('REQ APU cue reaches both PST depots separately from their isolated remark map', () => {
+  assert.match(source, /const reqApuTrainKeys = getRequestApuTrainKeys\(requests\);/);
+  assert.match(source, /<PSTTabContent\s+westData=\{activePSTWestData\}\s+eastData=\{activePSTEastData\}\s+maintenanceMap=\{pstMaintenanceMap\}\s+reqApuTrainKeys=\{reqApuTrainKeys\}/);
+  const tabStart = source.indexOf('function PSTTabContent\n');
+  const tabEnd = source.indexOf('\nfunction ', tabStart + 1);
+  assert.ok(tabStart >= 0 && tabEnd > tabStart);
+  const sections = source.slice(tabStart, tabEnd).match(/<PSTStablingSection\b[^\n]+\/>/g) || [];
+  assert.equal(sections.length, 2);
+  for (const section of sections) {
+    assert.match(section, /reqApuTrainKeys=\{reqApuTrainKeys\}/);
+    assert.match(section, /maintenanceMap=\{maintenanceMap\}/);
+  }
+});
+
+test('REQ-only APU applies the visual flag without displaying REQ remarks or changing work state', () => {
+  for (const depot of ['west', 'east']) {
+    const props = baseProps(depot);
+    const key = `${props.road}-0`;
+    const state = { pstState: { [key]: { trainKey: 'T5', done: true, startTime: '04:00', endTime: '04:06' } } };
+    const before = JSON.stringify(state);
+    const plain = render(depot, [], state);
+    const flagged = render(depot, [], { ...state, hasReqApuRemark: true });
+    assert.match(flagged, /is-pst-done has-apu-remark/);
+    assert.equal(flagged.replace(' has-apu-remark', ''), plain);
+    assert.doesNotMatch(flagged, /theme-pst-request-remark|APU|is-unfit/);
+    assert.equal(JSON.stringify(state), before);
+    assert.doesNotMatch(render(depot, [], { hasReqApuRemark: true, block: { trainId: '' } }), /has-apu-remark/);
+  }
+});
+
+test('REQ edits, hiding and deletion clear their APU cue while direct PST APU remarks keep working', () => {
+  for (const depot of ['west', 'east']) {
+    const active = { trainId: '05', requestType: 'Other', customType: 'APU alarm' };
+    for (const [requests, expected] of [
+      [[active], true],
+      [[{ ...active, groupHidden: true }], false],
+      [[{ ...active, groupTitle: 'Wash 7-Nov' }], false],
+      [[], false],
+      [[{ ...active, trainId: '06' }], false],
+    ]) {
+      const hasReqApuRemark = getRequestApuTrainKeys(requests).has('T5');
+      assert.equal(hasReqApuRemark, expected);
+      const html = render(depot, [{ badgeText: 'PST-only wash remark' }], { hasReqApuRemark });
+      assert.equal(html.includes('has-apu-remark'), expected);
+      assert.match(html, /PST-only wash remark/);
+      assert.doesNotMatch(html, /APU alarm/);
+      assert.match(render(depot, [{ badgeText: 'APU no load' }], { hasReqApuRemark }), /has-apu-remark/);
+    }
+  }
 });
 
 test('APU detection checks all active PST remarks without changing the two-pill display limit or mutating data', () => {

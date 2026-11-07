@@ -5046,17 +5046,27 @@ function shouldNavigatePSTGridInput(key, field, valueLength, selectionStart, sel
   return key === "ArrowLeft" ? selectionStart === 0 : selectionEnd === Number(valueLength);
 }
 
-function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, gridRowIndex = 0, gridColumnIndex = 0, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange, isSearchMatch = false }) {
+function getRequestApuTrainKeys(requests = []) {
+  return new Set(
+    (Array.isArray(requests) ? requests : [])
+      .filter((request) => request?.groupHidden !== true &&
+        /(^|[^A-Z0-9])APU($|[^A-Z0-9])/i.test(getTrainRequestGroupDisplayTitle(request)))
+      .map((request) => normalizeTrainId(request.trainId))
+      .filter(Boolean)
+  );
+}
+
+function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, gridRowIndex = 0, gridColumnIndex = 0, maintenanceMap, hasReqApuRemark = false, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange, isSearchMatch = false }) {
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  // APU is a visual flag from this page's active PST remarks only. It does not
+  // Active PST or REQ APU remarks supply a visual flag only. This does not
   // change fitness, PST/Prep completion or the separate APU checker selection.
-  const hasApuRemark = Boolean(key && (maintenanceMap?.[key] || []).some((item) =>
+  const hasApuRemark = Boolean(key && (hasReqApuRemark || (maintenanceMap?.[key] || []).some((item) =>
     /(^|[^A-Z0-9])APU($|[^A-Z0-9])/i.test(String(
       item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
     ))
-  ));
+  )));
   // PST remarks are intentionally isolated from the main Train Request and
   // stabling manual remarks. Display only entries created in the PST panel.
   const pstRemarkItems = key
@@ -5245,7 +5255,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearStablingTrains, stablingEditable = true, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
+function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, reqApuTrainKeys = null, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearStablingTrains, stablingEditable = true, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
   const normalizedSearch = normalizeTrainId(trainSearch);
   const searchFound = trainSearchResults.length > 0;
@@ -5476,7 +5486,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} gridRowIndex={ri} gridColumnIndex={i} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} gridRowIndex={ri} gridColumnIndex={i} maintenanceMap={maintenanceMap} hasReqApuRemark={Boolean(reqApuTrainKeys?.has(normalizeTrainId(data[road]?.[bi]?.trainId || "")))} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -15175,7 +15185,7 @@ function APUMismatchChecklist({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstRequests, onAddPSTRequest, onRemovePSTRequest, onClearPSTRequests, onRenamePSTRequestGroup, onDeletePSTRequestGroup, onTogglePSTRequestGroupHidden, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
+({ westData, eastData, maintenanceMap, reqApuTrainKeys, pstRequests, onAddPSTRequest, onRemovePSTRequest, onClearPSTRequests, onRenamePSTRequestGroup, onDeletePSTRequestGroup, onTogglePSTRequestGroupHidden, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
   const [trainSearch, setTrainSearch] = useState("");
   const trainSearchKey = normalizeTrainId(trainSearch);
   const trainSearchLocations = trainSearchKey ? getMainStablingLocations(westData, eastData) : {};
@@ -15324,7 +15334,7 @@ function PSTTabContent
     <div className="mobile-pst-workspace flex w-full min-w-0 flex-col items-start gap-7">
       <div data-mobile-depot="west" className="pst-depot-layout grid w-full min-w-0 grid-cols-1 gap-3 items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} reqApuTrainKeys={reqApuTrainKeys} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <style>{`
@@ -15429,7 +15439,7 @@ function PSTTabContent
 
       <div data-mobile-depot="east" className="pst-depot-layout grid w-full min-w-0 grid-cols-1 gap-3 items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} reqApuTrainKeys={reqApuTrainKeys} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
@@ -22142,6 +22152,7 @@ export default function DepotStablingPage() {
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
   const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const reqApuTrainKeys = getRequestApuTrainKeys(requests);
   const pstMaintenanceMap = buildMaintenanceMap(
     pstRequests.filter((request) => request?.groupHidden !== true)
   );
@@ -22973,6 +22984,7 @@ export default function DepotStablingPage() {
             westData={activePSTWestData}
             eastData={activePSTEastData}
             maintenanceMap={pstMaintenanceMap}
+            reqApuTrainKeys={reqApuTrainKeys}
             pstRequests={pstRequests}
             onAddPSTRequest={handleAddPSTRequest}
             onRemovePSTRequest={handleRemovePSTRequest}
