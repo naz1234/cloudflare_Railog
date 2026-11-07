@@ -6133,7 +6133,6 @@ function InsertionEditableHeaderControls({
   tooltipPlacement = "top",
   saveStatus = null,
   onRetrySave,
-  onUseShared,
   isRefreshing = false,
 }) {
   const syncTooltip = getStablingSyncTooltipCopy({ depotCode, workLabel, isDirty });
@@ -6209,7 +6208,7 @@ function InsertionEditableHeaderControls({
           Sync from Main
         </button>
       </ActionTooltip>
-      {saveStatus && <InsertionSaveStatus depot={depotCode === "ED" ? "east" : "west"} status={saveStatus} onRetry={onRetrySave} onUseShared={onUseShared} />}
+      {saveStatus && <InsertionSaveStatus depot={depotCode === "ED" ? "east" : "west"} status={saveStatus} onRetry={onRetrySave} />}
     </div>
   );
 }
@@ -7263,7 +7262,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, saveStatus = null, onRetrySave, onUseShared, isRefreshing = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, saveStatus = null, onRetrySave, isRefreshing = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [sectionSearch, setSectionSearch] = useState("");
@@ -7526,7 +7525,6 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
             tooltipPlacement={tooltipPlacement}
             saveStatus={saveStatus}
             onRetrySave={onRetrySave}
-            onUseShared={onUseShared}
             isRefreshing={isRefreshing}
           />
         }
@@ -22016,9 +22014,6 @@ export default function DepotStablingPage() {
       onRetrySave: () => insertionMainSyncStatus[normalizedDepot]?.phase === "failed"
         ? handleRefreshEditableStablingFromMain(normalizedDepot)
         : insertionSyncController.flush(),
-      onUseShared: () => {
-        if (window.confirm("Discard unsaved " + (isWest ? "West" : "East") + " Depot changes in this browser and use the latest shared values?")) insertionSyncController.useShared(normalizedDepot);
-      },
       data: isWest ? pg2Stabling.westData : pg2Stabling.eastData,
       insertionLog: pg2InsertionLog,
       onInsertionTick: handlePg2InsertionTick,

@@ -16,11 +16,11 @@ function rule(selector) { let result; css.walkRules(node => { if (node.selector 
 
 test('only Failed feedback reserves its own full toolbar row, keeping normal Saved and Saving compact', () => {
   for (const depot of ['west', 'east']) for (const phase of ['saved', 'saving', 'failed']) {
-    const html = renderToStaticMarkup(React.createElement(Status, { depot, status: { phase, conflict: phase === 'failed', error: phase === 'failed' ? 'Changed in another session. Your input is kept; review the shared version before replacing it.' : '' } }));
+    const html = renderToStaticMarkup(React.createElement(Status, { depot, status: { phase, error: phase === 'failed' ? 'Connection unavailable. Your input is kept; retrying automatically.' : '' } }));
     assert.equal(html.includes('insertion-save-feedback has-error'), phase === 'failed');
     assert.equal(html.includes('insertion-save-error'), phase === 'failed');
     if (phase === 'failed') {
-      assert.match(html, /Retry save/); assert.match(html, /Use shared/);
+      assert.match(html, /Retry save/); assert.doesNotMatch(html, /Use shared/);
       assert.match(html, /Your input is kept/);
     }
   }
@@ -63,12 +63,13 @@ test('tracking-ID help is in document flow, below the variable-height header, in
   assert.ok(section.indexOf('className="insertion-tracking-remark-note"') > section.indexOf('<InsertionSectionTitle'));
 });
 
-test('layout changes preserve Retry, shared-version recovery callbacks and accessible error reporting', () => {
+test('layout changes preserve Retry and accessible failure reporting without manual conflict-review controls', () => {
   const calls = [];
-  const tree = Status({ depot: 'east', status: { phase: 'failed', conflict: true, error: 'Keep pending data' }, onRetry: () => calls.push('retry'), onUseShared: () => calls.push('shared') });
+  const tree = Status({ depot: 'east', status: { phase: 'failed', conflict: true, error: 'Keep pending data' }, onRetry: () => calls.push('retry') });
   const buttons = React.Children.toArray(tree.props.children).filter(node => node.type === 'button');
-  buttons[0].props.onClick(); buttons[1].props.onClick();
-  assert.deepEqual(calls, ['retry', 'shared']);
+  assert.equal(buttons.length, 1);
+  buttons[0].props.onClick();
+  assert.deepEqual(calls, ['retry']);
   const html = renderToStaticMarkup(tree);
   assert.match(html, /role="status" aria-live="polite"/);
   assert.match(html, /East Depot: Failed\. Keep pending data/);

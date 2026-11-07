@@ -75,7 +75,7 @@ test('concurrent West and East clients preserve unrelated edits, including a sta
   } finally { db.close(); }
 });
 
-test('same-cell conflicts stop for review instead of overwriting another session, while the other depot still saves', async () => {
+test('same-field edits save automatically without review; last successful save wins and other-depot edits survive', async () => {
   const db = memoryD1();
   try {
     await seed(db);
@@ -85,19 +85,17 @@ test('same-cell conflicts stop for review instead of overwriting another session
     set(b, { 'pg2TidInputs.ED-ST02-0': '202', 'pg2TidInputs.WD-ST15-0': '101' });
     await a.flush(); await b.flush();
     const shared = (await transport(db).load()).state;
-    assert.equal(shared.pg2TidInputs['ED-ST02-0'], '201');
+    assert.equal(shared.pg2TidInputs['ED-ST02-0'], '202');
     assert.equal(shared.pg2TidInputs['WD-ST15-0'], '101');
     assert.equal(b.getView().state.pg2TidInputs['ED-ST02-0'], '202');
-    assert.equal(b.getView().depots.east.phase, 'failed');
-    assert.equal(b.getView().depots.east.conflict, true);
+    assert.equal(b.getView().depots.east.phase, 'saved');
+    assert.equal(b.getView().depots.east.error, '');
     assert.equal(b.getView().depots.west.phase, 'saved');
-    await b.useShared('east');
-    assert.equal(b.getView().state.pg2TidInputs['ED-ST02-0'], '201');
     assert.equal(b.getView().pending, 0);
   } finally { db.close(); }
 });
 
-test('a stale TID cannot attach to a different train moved into the same cell by another laptop', async () => {
+test('obsolete TID input is backed up automatically rather than attached to a replacement train or held for review', async () => {
   const db = memoryD1();
   try {
     await seed(db, { 'pg2Stabling.eastData.ED-ST02.0': { trainId: '17', extraRemark: '' } });
@@ -106,14 +104,17 @@ test('a stale TID cannot attach to a different train moved into the same cell by
     set(a, { 'pg2Stabling.eastData.ED-ST02.0': { trainId: '40', extraRemark: '' } });
     set(b, { 'pg2TidInputs.ED-ST02-0': '201' });
     await a.flush(); await b.flush();
-    assert.equal(b.getView().depots.east.conflict, true);
+    assert.equal(b.getView().depots.east.phase, 'saved');
+    assert.equal(b.getView().pending, 0);
+    assert.equal(b.getView().retainedInputs.length, 1);
+    assert.equal(b.getView().retainedInputs[0].entry.value, '201');
     const shared = (await transport(db).load()).state;
     assert.equal(shared.pg2Stabling.eastData['ED-ST02'][0].trainId, '40');
     assert.equal(shared.pg2TidInputs['ED-ST02-0'], undefined);
   } finally { db.close(); }
 });
 
-test('a conflicted cell cannot save its train change while retaining an unseen conflicting TID', async () => {
+test('the last explicit train-layout save wins and clears the old TID atomically without manual review', async () => {
   const db = memoryD1();
   try {
     await seed(db, { 'pg2Stabling.eastData.ED-ST02.0': { trainId: '17', extraRemark: '' } });
@@ -122,10 +123,10 @@ test('a conflicted cell cannot save its train change while retaining an unseen c
     set(a, { 'pg2TidInputs.ED-ST02-0': '201' });
     set(b, { 'pg2Stabling.eastData.ED-ST02.0': { trainId: '40', extraRemark: '' } });
     await a.flush(); await b.flush();
-    assert.equal(b.getView().depots.east.conflict, true);
+    assert.equal(b.getView().depots.east.phase, 'saved');
     const shared = (await transport(db).load()).state;
-    assert.equal(shared.pg2Stabling.eastData['ED-ST02'][0].trainId, '17');
-    assert.equal(shared.pg2TidInputs['ED-ST02-0'], '201');
+    assert.equal(shared.pg2Stabling.eastData['ED-ST02'][0].trainId, '40');
+    assert.equal(shared.pg2TidInputs['ED-ST02-0'], undefined);
   } finally { db.close(); }
 });
 
@@ -190,11 +191,11 @@ test('failed initial loading cannot post cached data, and prolonged failures ret
   assert.equal(c.sync.getView().depots.east.phase, 'failed');
 });
 
-test('Use shared does not discard a pending edit if refreshing the shared version fails', async () => {
+test('automatic retry does not discard a pending edit if refreshing the shared version fails', async () => {
   let offline = false;
   const c = client({ load: async () => { if (offline) throw new Error('Offline'); return { revision: 1, state: empty(), updatedAt: '2026-11-07' }; }, save: async () => {} });
   await c.sync.refresh(); set(c.sync, { 'pg2TidInputs.ED-ST02-0': '201' });
-  offline = true; await c.sync.useShared('east');
+  offline = true; await c.sync.flush();
   assert.equal(c.sync.getView().pending, 1);
   assert.equal(c.sync.getView().state.pg2TidInputs['ED-ST02-0'], '201');
   assert.equal(c.sync.getView().depots.east.phase, 'failed');
@@ -315,7 +316,7 @@ test('stalled requests time out so the durable retry queue cannot remain stuck s
   await assert.rejects(t.load(), /Timed out/);
 });
 
-test('both depot status pills visibly distinguish Saved, Saving and Failed with retry and conflict review controls', () => {
+test('both depot status pills retain Saved, Saving and Failed with retry, but no manual review control', () => {
   const source = readFileSync(new URL('../src/components/depot/InsertionSaveStatus.jsx', import.meta.url), 'utf8');
   const compiled = ts.transpileModule(source.replace('export default function', 'function') + '\nreturn InsertionSaveStatus;', { compilerOptions: { jsx: ts.JsxEmit.React } }).outputText;
   const Status = new Function('React', compiled)(React);
@@ -323,15 +324,17 @@ test('both depot status pills visibly distinguish Saved, Saving and Failed with 
     const html = renderToStaticMarkup(React.createElement(Status, { depot, status: { phase, error: phase === 'failed' ? 'Offline; input kept' : '', conflict: phase === 'failed' } }));
     assert.ok(html.includes(label)); assert.match(html, /role="status" aria-live="polite"/);
     assert.ok(html.includes(`data-insertion-save-depot="${depot}"`));
-    if (phase === 'failed') { assert.match(html, /Retry save/); assert.match(html, /Use shared/); assert.match(html, /Offline; input kept/); }
+    assert.doesNotMatch(html, /Use shared|Review changes|review the shared/);
+    if (phase === 'failed') { assert.match(html, /Retry save/); assert.match(html, /Offline; input kept/); }
   }
 });
 
-test('both actual INS depot configurations expose status/retry and require confirmation before discarding conflicts', () => {
+test('both actual INS depot configurations retain status/retry and destructive-sync confirmation without review callbacks', () => {
   const page = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
   assert.match(page, /saveStatus: insertionMainSyncStatus\[normalizedDepot\] \|\| insertionSaveStatus\[normalizedDepot\]/);
   assert.match(page, /onRetrySave:[\s\S]*?insertionSyncController\.flush\(\)/);
-  assert.match(page, /window\.confirm\("Discard unsaved [\s\S]*?insertionSyncController\.useShared\(normalizedDepot\)/);
+  assert.doesNotMatch(page, /onUseShared|insertionSyncController\.useShared/);
+  assert.match(page, /window\.confirm\("Sync [\s\S]*?clears its insertion entries and TID inputs/);
   assert.match(page, /window\.addEventListener\('online', retry\)/);
   assert.match(page, /window\.addEventListener\('beforeunload', beforeUnload\)/);
   assert.match(page, /insertionSyncController\.stop\(\)/);

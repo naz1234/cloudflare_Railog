@@ -3,6 +3,7 @@ import { applyInsertionChanges, diffInsertionState, flattenInsertionState, inser
 export const INSERTION_SYNC_CACHE = 'insertionProtectedSync_v2';
 export const INSERTION_SYNC_BACKUP = 'insertionBeforeProtectedSync_v2';
 export const INSERTION_SYNC_OUTBOX = 'insertionProtectedOutbox_v2:';
+export const INSERTION_SYNC_SUPERSEDED = 'insertionSupersededInput_v2:';
 
 export function createInsertionTransport(fetcher = globalThis.fetch, timeoutMs = 15000) {
   const request = async (body) => {
@@ -42,13 +43,18 @@ export function createInsertionSyncController({ transport, storage, initialState
   let state = normalizeInsertionSharedState(cached?.version === 2 ? cached.state : initialState);
   let remote = { revision: -1, state: normalizeInsertionSharedState({}), updatedAt: null };
   const pending = new Map(), listeners = new Set();
+  const retainedInputs = new Map((Array.isArray(cached?.retainedInputs) ? cached.retainedInputs : []).filter(entry => entry && typeof entry.id === 'string').map(entry => [entry.id, entry]));
   let sequence = 0, ready = false, loading = null, saving = null, timer = null, stopped = false, retryCount = 0, view;
   const actor = globalThis.crypto.randomUUID();
   const retire = (entry) => {
     try { for (const id of [entry.id, ...(entry.previousIds || [])]) if (id) storage?.removeItem?.(INSERTION_SYNC_OUTBOX + id); } catch { /* Keep the browser backup if storage is blocked. */ }
   };
   try {
-    const recovered = cached?.version === 2 && cached.pending ? Object.entries(cached.pending) : [];
+    // An acknowledged operation may remain in a stale tab's display cache.
+    // Its retired outbox ID must not be replayed as a fresh last-wins edit.
+    const recovered = cached?.version === 2 && cached.pending ? Object.entries(cached.pending)
+      .filter(([, entry]) => !entry.id || storage?.getItem(INSERTION_SYNC_OUTBOX + entry.id) != null)
+      .map(([key, entry]) => [key, entry, 1]) : [];
     // Each operation has its own immutable ID/key. A clean tab cannot erase
     // another tab's unsaved outbox by replacing the shared display cache.
     for (let i = 0; i < (storage?.length || 0); i++) {
@@ -58,16 +64,15 @@ export function createInsertionSyncController({ transport, storage, initialState
         if (saved?.key && saved?.entry?.id) recovered.push([saved.key, saved.entry]);
       }
     }
-    recovered.sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0) || (a[1].sequence || 0) - (b[1].sequence || 0));
+    recovered.sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0) || (a[1].sequence || 0) - (b[1].sequence || 0) || (a[2] || 0) - (b[2] || 0));
     const seen = new Set();
     for (const [key, entry] of recovered) {
       validateInsertionChanges({ [key]: entry.value });
       if (entry.id && seen.has(entry.id)) continue;
       if (entry.id) seen.add(entry.id);
       const previous = pending.get(key);
-      pending.set(key, { ...entry, id: entry.id || globalThis.crypto.randomUUID(), sequence: ++sequence,
-        previousIds: [...new Set([...(entry.previousIds || []), ...(previous ? [previous.id, ...(previous.previousIds || [])] : [])])],
-        localConflict: Boolean(entry.localConflict || previous?.localConflict || (previous && previous.actor !== entry.actor && !sameInsertionValue(previous.value, entry.value))) });
+      pending.set(key, { ...entry, seeded: entry.seeded ?? (entry.guardKey === undefined), id: entry.id || globalThis.crypto.randomUUID(), sequence: ++sequence,
+        previousIds: [...new Set([...(entry.previousIds || []), ...(previous ? [previous.id, ...(previous.previousIds || [])] : [])])] });
     }
     if (!storage?.getItem(INSERTION_SYNC_BACKUP)) storage?.setItem(INSERTION_SYNC_BACKUP, JSON.stringify(initialState));
   } catch { /* A blocked browser store does not block shared saving. */ }
@@ -75,18 +80,17 @@ export function createInsertionSyncController({ transport, storage, initialState
   const persist = () => {
     try {
       for (const [key, entry] of pending) storage?.setItem(INSERTION_SYNC_OUTBOX + entry.id, JSON.stringify({ key, entry }));
-      storage?.setItem(INSERTION_SYNC_CACHE, JSON.stringify({ version: 2, state, pending: Object.fromEntries(pending) }));
+      storage?.setItem(INSERTION_SYNC_CACHE, JSON.stringify({ version: 2, state, pending: Object.fromEntries(pending), retainedInputs: [...retainedInputs.values()] }));
     } catch { /* Keep edits in memory if storage is blocked. */ }
   };
   const publish = (phase = 'saved', error = '') => {
     const depots = {};
     for (const depot of ['west', 'east']) {
       const entries = [...pending].filter(([key, entry]) => insertionFieldDepot(key, entry.value || entry.base) === depot);
-      const conflict = entries.some(([, entry]) => entry.conflict);
-      depots[depot] = { phase: !ready ? phase : entries.length ? conflict ? 'failed' : phase : 'saved',
-        error: conflict ? 'Changed in another session. Your input is kept; review the shared version before replacing it.' : entries.length || !ready ? error : '', conflict };
+      depots[depot] = { phase: !ready ? phase : entries.length ? phase : 'saved',
+        error: entries.length || !ready ? error : '' };
     }
-    view = { state, depots, ready, updatedAt: remote.updatedAt, pending: pending.size };
+    view = { state, depots, ready, updatedAt: remote.updatedAt, pending: pending.size, retainedInputs: [...retainedInputs.values()] };
     for (const listener of listeners) listener(view);
   };
   const receive = (snapshot) => {
@@ -94,16 +98,23 @@ export function createInsertionSyncController({ transport, storage, initialState
     if (snapshot.revision < remote.revision) return;
     remote = { ...snapshot, state: normalizeInsertionSharedState(snapshot.state) };
     const fields = flattenInsertionState(remote.state);
-    const desiredCells = new Map([...pending].filter(([key]) => key.startsWith('pg2Stabling.')).map(([key, entry]) => [key, entry.value]));
+    const editedCells = new Set([...pending.keys()].filter(key => key.startsWith('pg2Stabling.')));
+    const trainKey = value => String(value || '').replace(/\s+/g, '').toUpperCase().replace(/^T?0*(\d+)$/, '$1');
+    const obsoleteCells = new Set([...pending.values()].filter(entry => entry.guardKey && !editedCells.has(entry.guardKey)
+      && trainKey(fields[entry.guardKey]?.trainId) !== trainKey(entry.guard?.trainId)).map(entry => entry.guardKey));
     for (const [key, entry] of pending) {
-      const guardConflict = entry.guardKey && !sameInsertionValue(fields[entry.guardKey], entry.guard)
-        && !sameInsertionValue(fields[entry.guardKey], desiredCells.get(entry.guardKey));
-      if (!entry.localConflict && !guardConflict && sameInsertionValue(fields[key], entry.value)) { pending.delete(key); retire(entry); } // Includes a lost successful acknowledgement.
-      else entry.conflict = Boolean(entry.localConflict || guardConflict || !sameInsertionValue(fields[key], entry.base));
+      if (entry.seeded && snapshot.revision > 0) { pending.delete(key); retire(entry); }
+      else if (obsoleteCells.has(insertionCellPath(key))) {
+        // Never attach a stale TID/log to a replacement train. Retain that input
+        // separately and accept the current shared train without asking for review.
+        const retained = { id: entry.id, key, entry: structuredClone(entry), reason: 'Train at this block changed before saving.', updatedAt: new Date().toISOString() };
+        retainedInputs.set(entry.id, retained);
+        try { storage?.setItem(INSERTION_SYNC_SUPERSEDED + entry.id, JSON.stringify(retained)); retire(entry); } catch { /* Keep the original outbox if a durable archive cannot be written. */ }
+        pending.delete(key);
+      } else if (sameInsertionValue(fields[key], entry.value)) { pending.delete(key); retire(entry); } // Includes a lost successful acknowledgement.
     }
-    // A train, its TID and its log are one unit; never save half a conflicted cell.
-    const conflictedCells = new Set([...pending].filter(([, entry]) => entry.conflict).map(([key]) => insertionCellPath(key)).filter(Boolean));
-    for (const [key, entry] of pending) if (conflictedCells.has(insertionCellPath(key))) entry.conflict = true;
+    // Rebase only queued fields. If the same train's field changed elsewhere,
+    // the last successful save wins; unrelated shared fields stay untouched.
     state = applyInsertionChanges(remote.state, changes());
     ready = true;
     persist();
@@ -130,7 +141,7 @@ export function createInsertionSyncController({ transport, storage, initialState
           const initial = diffInsertionState(normalizeInsertionSharedState({}), state);
           const fields = flattenInsertionState(snapshot.state);
           for (const [key, value] of Object.entries(initial)) pending.set(key, { value, base: fields[key] ?? null, sequence: ++sequence,
-            id: globalThis.crypto.randomUUID(), actor, createdAt: Date.now() });
+            id: globalThis.crypto.randomUUID(), actor, createdAt: Date.now(), seeded: true });
         }
         receive(snapshot);
         publish(pending.size ? 'pending' : 'saved');
@@ -150,8 +161,7 @@ export function createInsertionSyncController({ transport, storage, initialState
         receive(await transport.load());
         let conflicts = 0;
         while (pending.size) {
-          const sent = new Map([...pending].filter(([, entry]) => !entry.conflict));
-          if (!sent.size) { publish('failed'); return; }
+          const sent = new Map(pending);
           publish('saving');
           try {
             const snapshot = await transport.save(remote.revision, Object.fromEntries([...sent].map(([key, entry]) => [key, entry.value])));
@@ -169,7 +179,15 @@ export function createInsertionSyncController({ transport, storage, initialState
             receive(snapshot);
             retryCount = 0; conflicts = 0;
           } catch (error) {
-            if (error.status === 409 && error.snapshot && ++conflicts <= 4) { receive(error.snapshot); continue; }
+            if (error.status === 409 && error.snapshot) {
+              receive(error.snapshot);
+              if (++conflicts <= 4) continue;
+              // Repeated simultaneous writes are normal contention, not a
+              // review-required failure. Keep the queue and retry quietly.
+              publish(pending.size ? 'pending' : 'saved');
+              if (pending.size) queueTimer(Math.min(30000, 1000 * 2 ** Math.min(retryCount++, 5)));
+              return;
+            }
             throw error;
           }
         }
@@ -197,18 +215,10 @@ export function createInsertionSyncController({ transport, storage, initialState
         pending.set(key, { value, base: pending.has(key) ? pending.get(key).base : fields[key] ?? null,
           guardKey, guard: guardKey ? previousFields[guardKey] : null, sequence: ++sequence,
           id: globalThis.crypto.randomUUID(), actor, createdAt: Date.now(),
-          previousIds: previous ? [previous.id, ...(previous.previousIds || [])] : [], localConflict: previous?.localConflict || false });
+          previousIds: previous ? [previous.id, ...(previous.previousIds || [])] : [] });
       }
       state = normalizeInsertionSharedState(next);
       persist(); publish('pending'); queueTimer(debounceMs);
-    },
-    async useShared(depot) {
-      try {
-        receive(await transport.load());
-        for (const [key, entry] of pending) if (insertionFieldDepot(key, entry.value || entry.base) === depot) { pending.delete(key); retire(entry); }
-        state = applyInsertionChanges(remote.state, changes());
-        persist(); publish(pending.size ? 'pending' : 'saved');
-      } catch (error) { failed(error); }
     },
     refresh, flush,
     start() { stopped = false; },
