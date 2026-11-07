@@ -5,6 +5,7 @@
 
 html[data-app-theme] .theme-insertion-section[data-insertion-design="req-header"] .insertion-tracking-remark-note {
   display: flex; align-items: flex-start; gap: 6px; margin: 0 0 12px;
+  min-width: 0; max-width: 100%; overflow-wrap: anywhere;
   color: #ffffff !important; font-size: 11px; font-weight: 400; line-height: 1.5;
 }
 html[data-app-theme="light"] .theme-insertion-section[data-insertion-design="req-header"] .insertion-tracking-remark-note { color: #4e7198 !important; }
@@ -96,9 +97,6 @@ html[data-app-theme] .theme-insertion-section[data-insertion-design="req-header"
   }
   html[data-app-theme] .theme-insertion-section[data-insertion-design="req-header"] .theme-insertion-hide.is-active {
     border-color: var(--insertion-header-focus) !important;
-  }
-  html[data-app-theme] .theme-insertion-section[data-insertion-design="req-header"] .insertion-tracking-remark-note {
-    position: absolute; top: 69px; right: 16px; max-width: calc(100% - 432px); margin: 0;
   }
   html[data-app-theme] .theme-insertion-section[data-insertion-design="req-header"] .theme-insertion-search {
     min-height: 34px; padding: 0 12px; border-radius: 12px;
