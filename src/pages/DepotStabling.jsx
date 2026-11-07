@@ -38,6 +38,7 @@ import "../possessionMobile.css";
 import "../possessionDesktop.css";
 import "../possessionReference.css";
 import "../pstSlate.css";
+import "../pstApuRemarkTheme.css";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
@@ -5049,6 +5050,13 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
+  // APU is a visual flag from this page's active PST remarks only. It does not
+  // change fitness, PST/Prep completion or the separate APU checker selection.
+  const hasApuRemark = Boolean(key && (maintenanceMap?.[key] || []).some((item) =>
+    /(^|[^A-Z0-9])APU($|[^A-Z0-9])/i.test(String(
+      item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
+    ))
+  ));
   // PST remarks are intentionally isolated from the main Train Request and
   // stabling manual remarks. Display only entries created in the PST panel.
   const pstRemarkItems = key
@@ -5112,7 +5120,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   });
   return (
     <td className="theme-pst-grid-cell p-1.5 align-top" data-mobile-block-label={`Block ${bi + 1}`} style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className={`theme-pst-card ${isSearchMatch ? "is-search-match" : ""} relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+      <div className={`theme-pst-card ${isSearchMatch ? "is-search-match" : ""} relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}${hasApuRemark ? " has-apu-remark" : ""}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
