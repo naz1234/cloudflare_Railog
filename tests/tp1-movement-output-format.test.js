@@ -70,6 +70,16 @@ test("Manual output has the same header block and separately timed arrival event
   assert.doesNotMatch(output, /CMMS handover completed|Hand Back Completed/);
 });
 
+test("ALWANY is included in both movement outputs locally and in production", () => {
+  for (const code of [source, production]) {
+    for (const movementType of ["automatic", "manual"]) {
+      const output = harness({ ...sample, shunterName: "ALWANY" }, code).buildOutput({ movementType });
+      assert.match(output, /12:23 hrs – T05 arrived at TP1 with Shunter Alwany onboard\./);
+      assert.doesNotMatch(output, /Shunter Fazreen/);
+    }
+  }
+});
+
 test("Manual SR and selected maintenance-report notes survive the new formatting", () => {
   const output = harness({ ...sample, srNumber: "10121125", l3ReportUpdatedBy: "SIRAJ" }).buildOutput({ movementType: "manual" });
   assert.match(output, /CMMS HO for handover: #2232 with SR #10121125\.\n\n12:23 hrs/);
