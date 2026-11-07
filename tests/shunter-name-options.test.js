@@ -23,3 +23,15 @@ test("automatic and manual area movements use the shared shunter name list", () 
 
   assert.equal(sharedListUsages?.length, 2);
 });
+
+test("ALWANY is available once without removing any existing shunter names", () => {
+  const optionList = depotStablingSource.match(
+    /const SHUNTER_NAME_OPTIONS = \[([\s\S]*?)\r?\n  \];/,
+  );
+  assert.ok(optionList, "expected the shared shunter name list to exist");
+  const names = [...optionList[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(names.filter((name) => name === "ALWANY").length, 1);
+  for (const name of ["PAUL", "FAZREEN", "ARSHAD", "BBOSA", "AKMAL", "KRISNA", "GERALD", "LEO", "FARAS", "MIRAN", "WENDELL"]) {
+    assert.ok(names.includes(name), `${name} must remain available`);
+  }
+});

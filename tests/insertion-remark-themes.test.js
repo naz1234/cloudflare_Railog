@@ -62,7 +62,7 @@ function renderCell(depot, remarks, overrides = {}) {
 
 test('both actual INS depot cards use the same three REQ themes and retain their remark and TID controls', () => {
   for (const depot of ['west', 'east']) {
-    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['APU ALARM', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['Deep Cleaning', 'deep-clean']]) {
+    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['APU', 'unfit'], ['APU ALARM', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['Deep Cleaning', 'deep-clean']]) {
       const html = renderCell(depot, [{ badgeText: 'Wash 4-Nov' }, { badgeText: label }]);
       assert.match(html, new RegExp(`has-remark-theme is-${theme}`));
       assert.ok(html.includes(label));
@@ -78,11 +78,11 @@ test('both actual INS depot cards use the same three REQ themes and retain their
   }
 });
 
-test('both INS depots leave APU mismatch neutral and respond to their own APU ALARM remarks', () => {
+test('both INS depots leave APU mismatch neutral and respond to their own APU or APU ALARM remarks', () => {
   for (const depot of ['west', 'east']) {
     const road = depot === 'west' ? 'WD-ST15' : 'ED-ST02';
     assert.doesNotMatch(renderCell(depot, [{ badgeText: 'APU MISMATCH' }]), /has-remark-theme/);
-    for (const [remark, theme] of [['APU ALARM', 'unfit'], ['APU MISMATCH', '']]) {
+    for (const [remark, theme] of [['APU', 'unfit'], ['APU ALARM', 'unfit'], ['APU MISMATCH', '']]) {
       const html = renderCell(depot, [], {
         insertionLog: [{ key: `ins-${road}-0`, trainKey: 'T45', remark, time: '05:02' }],
       });

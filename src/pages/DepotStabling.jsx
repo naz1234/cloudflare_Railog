@@ -5061,7 +5061,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  // Active PST or REQ APU ALARM remarks supply a visual flag only. This does not
+  // Active PST or REQ APU / APU ALARM remarks supply a visual flag only. This does not
   // change fitness, PST/Prep completion or the separate APU checker selection.
   const hasApuRemark = Boolean(key && (hasReqApuRemark || (maintenanceMap?.[key] || []).some((item) =>
     isApuAlarmRemark(
@@ -12350,6 +12350,7 @@ function TrainMovementContent() {
     "FARAS",
     "MIRAN",
     "WENDELL",
+    "ALWANY",
   ];
 
   const TP1_AUTOMATIC_STABLING_OPTIONS = [
