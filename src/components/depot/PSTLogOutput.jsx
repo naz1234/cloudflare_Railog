@@ -245,6 +245,19 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
     .trim();
 }
 
+function getCombinedPSTFldcText(pstLines = [], depotLabel = "", fldcText = "") {
+  if (!pstLines.length || !fldcText) return "";
+  // This extra copy action always uses the requested summary/timings format,
+  // independently of the selected ELOG display style. Never mutate live logs.
+  const minutes = (entry) => {
+    const match = getPSTStartTime(entry).match(/^(\d{1,2}):(\d{2})$/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : Number.POSITIVE_INFINITY;
+  };
+  const sortedPstLines = [...pstLines].sort((left, right) => minutes(left) - minutes(right)
+    || getPSTTrainKey(left).localeCompare(getPSTTrainKey(right), undefined, { numeric: true }));
+  return [getPSTSectionText(sortedPstLines, depotLabel), fldcText].join("\n\n");
+}
+
 function formatELogTime(value = "") {
   const digits = value.toString().replace(/\D/g, "").slice(0, 4);
   if (!digits) return "--:--H";
@@ -481,6 +494,7 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
   const fldcVerification = fldcController?.exportVerifications?.[depotKey];
   const fldcText = !fldcBusy && !fldcError && fldcVerification?.depot === depotKey
     ? buildPstFldcChecklistLog(fldcVerification) : "";
+  const combinedPstFldcText = getCombinedPSTFldcText(pstLines, depotLabel, fldcText);
   const fldcEmptyText = fldcBusy ? "Saving FLDC verification…" : fldcError
     ? "FLDC verification not saved. Retry in the FLDC checker."
     : "Tick trains in the FLDC checker to generate this log.";
@@ -508,6 +522,7 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
           <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} variant="pst" tooltip={`Copy ${depotLabel} Depot PST log`} />
           <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} variant="prep" tooltip={`Copy ${depotLabel} Depot Train Prep log`} />
           {fldcController && <CopyButton text={fldcText} label="Copy FLDC" disabled={!fldcText} variant="fldc" tooltip={`Copy ${depotLabel} Depot FLDC verification log`} />}
+          {fldcController && <CopyButton text={combinedPstFldcText} label="Copy PST + FLDC" disabled={!combinedPstFldcText} variant="fldc" tooltip={!pstLines.length ? `Complete ${depotLabel} Depot PST first` : !fldcText ? `Save ${depotLabel} Depot FLDC verification first` : `Copy ${depotLabel} Depot PST summary, timings, note and saved FLDC verification together`} />}
           <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
         </div>
       </div>
