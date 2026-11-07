@@ -157,6 +157,22 @@ function renderSection(query, overrides = {}) {
   }));
 }
 
+test("actual PST grids flag only matching REQ APU trains without rendering REQ remark pills", () => {
+  for (const depot of ['west', 'east']) {
+    const road = depot === 'west' ? 'WD-ST15' : 'ED-ST02';
+    const html = renderSection('', {
+      title: `${depot.toUpperCase()} DEPOT — PST / TRAIN PREP`,
+      roads: [road], labelSide: depot === 'west' ? 'left' : 'right',
+      data: { [road]: [{ trainId: 'T003' }, { trainId: 'T04' }, null] },
+      reqApuTrainKeys: new Set(['T3']),
+    });
+    assert.equal((html.match(/has-apu-remark/g) || []).length, 1);
+    assert.equal((html.match(/class="theme-pst-card/g) || []).length, 3);
+    assert.doesNotMatch(html, /theme-pst-request-remark|APU|is-unfit/);
+    assert.doesNotMatch(renderSection('', { reqApuTrainKeys: new Set(['T99']) }), /has-apu-remark/);
+  }
+});
+
 test("rendered PST search highlights only the matching card and preserves every work status", () => {
   const states = [
     [{}, "is-normal"],
