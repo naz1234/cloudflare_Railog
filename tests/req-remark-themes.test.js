@@ -61,6 +61,27 @@ test('least-priority and deep-clean remark spellings select their approved theme
   }
 });
 
+test('APU ALARM uses the UNFIT surface, but APU mismatch and other APU remarks do not', () => {
+  for (const label of ['APU ALARM', 'apu alarm', 'APU-ALARM', 'APU_ALARM', 'APU ALARM - RST CM']) {
+    for (const item of [label, { badgeText: label }, { displayType: label }, { typeKey: label }]) {
+      assert.equal(getStablingRemarkTheme([item]), 'unfit', label);
+    }
+  }
+  for (const label of ['APU MISMATCH', 'APU MIS', 'APU MIS - RST CM', 'APU missmatch', 'APU', 'APU ALARMING', 'NOTAPU ALARM']) {
+    assert.equal(getStablingRemarkTheme([label]), '', label);
+  }
+});
+
+test('APU ALARM retains warning priority without mutating or excluding separate mismatch remarks', () => {
+  const items = ['APU MISMATCH', 'Deep Clean', 'FIT but LEAST PRIORITY', 'APU ALARM'].map(badgeText => ({ badgeText }));
+  const original = structuredClone(items);
+  assert.equal(getStablingRemarkTheme(items), 'unfit');
+  assert.equal(getStablingRemarkTheme([...items].reverse()), 'unfit');
+  assert.equal(getStablingRemarkTheme(items.slice(0, -1)), 'least-priority');
+  assert.equal(getStablingRemarkTheme(items.slice(0, 2)), 'deep-clean');
+  assert.deepEqual(items, original);
+});
+
 test('UNFIT takes visual priority over least priority and deep clean without modifying requests', () => {
   const items = [{ badgeText: 'Deep Clean' }, { badgeText: 'FIT but LEAST PRIORITY' }, { badgeText: 'Unfit by TSM' }];
   const original = JSON.stringify(items);
@@ -72,7 +93,7 @@ test('UNFIT takes visual priority over least priority and deep clean without mod
 
 test('both actual REQ depot cards gain the theme class without recolouring or dropping remark pills', () => {
   for (const depot of ['west', 'east']) {
-    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['DEEP CLEAN', 'deep-clean']]) {
+    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['APU ALARM', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['DEEP CLEAN', 'deep-clean']]) {
       const html = renderRow(depot, [{ badgeText: 'RST PM' }, { badgeText: label }]);
       assert.match(html, new RegExp(`class="theme-stabling-train-card[^"\\n]*has-remark-theme is-${theme}`));
       assert.match(html, new RegExp(`data-stabling-depot="${depot}"`));
@@ -83,11 +104,12 @@ test('both actual REQ depot cards gain the theme class without recolouring or dr
       assert.doesNotMatch(html, /DUPLICATE/);
     }
     assert.doesNotMatch(renderRow(depot, [{ badgeText: 'Wash 4-Nov' }]), /has-remark-theme/);
+    assert.doesNotMatch(renderRow(depot, [{ badgeText: 'APU MISMATCH' }]), /has-remark-theme/);
   }
 });
 
 test('empty cards and hidden remarks do not receive an unrelated theme', () => {
-  for (const label of ['UNFIT', 'FIT but LEAST PRIORITY', 'Deep Clean']) {
+  for (const label of ['UNFIT', 'APU ALARM', 'FIT but LEAST PRIORITY', 'Deep Clean']) {
     assert.doesNotMatch(renderRow('west', [{ badgeText: label }], { blocks: [{ trainId: '' }] }), /has-remark-theme/);
     assert.doesNotMatch(renderRow('west', [], { hiddenMaintenanceMap: { T45: [{ badgeText: label }] } }), /has-remark-theme/);
   }
