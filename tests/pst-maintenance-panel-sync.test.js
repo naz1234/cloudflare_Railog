@@ -48,11 +48,13 @@ test("PST remarks use a dedicated synced entity", () => {
   assert.match(pageSource, /base44\.entities\.PSTMaintenanceRequest\.delete/);
 });
 
-test("PST cards show only PST-entered remarks without APU keyword detection", () => {
+test("PST cards show only PST-entered remarks, with APU detection limited to a visual card flag", () => {
   assert.match(pstCellSource, /const pstRemarkItems = key/);
   assert.match(pstCellSource, /maintenanceMap\?\.\[key\]/);
   assert.match(pstCellSource, /theme-pst-request-remark/);
-  assert.doesNotMatch(pstCellSource, /\\bAPU\\b/i);
+  assert.match(pstCellSource, /const hasApuRemark = Boolean\(key && \(maintenanceMap\?\.\[key\]/);
+  assert.match(pstCellSource, /hasApuRemark \? " has-apu-remark" : ""/);
+  assert.doesNotMatch(pstCellSource, /apuMismatchTrainIds|maintenanceMap=\{maintenanceMap\}|is-unfit/);
   assert.doesNotMatch(pstCellSource, /block\?\.extraRemark/);
   assert.match(pageSource, /const pstMaintenanceMap = buildMaintenanceMap\([\s\S]*?pstRequests\.filter/);
   assert.match(pstTabRender, /maintenanceMap=\{pstMaintenanceMap\}/);

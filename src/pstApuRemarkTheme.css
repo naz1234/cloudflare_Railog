@@ -1,0 +1,14 @@
+/* Visual APU remark flag only. Match the approved REQ UNFIT surface without
+   changing fitness, completion colours inside controls, geometry or light mode. */
+html[data-app-theme="dark"] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-pst-card.has-apu-remark:not(.is-empty):not(.is-search-match) {
+  background: linear-gradient(135deg, #2d0a0a, #1a0505) !important;
+  border-color: #7a5324 !important;
+  box-shadow:
+    0 0 0 1px rgba(249, 115, 22, 0.18),
+    0 7px 20px rgba(249, 115, 22, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html[data-app-theme="dark"] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-pst-card.has-apu-remark:not(.is-empty):not(.is-search-match) > .theme-pst-train-number {
+  border-bottom-color: rgba(248, 113, 113, 0.72) !important;
+}
