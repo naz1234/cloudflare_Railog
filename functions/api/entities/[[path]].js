@@ -225,6 +225,12 @@ export async function onRequest(context) {
     return json({ error: `Unknown entity: ${entity || '(empty)'}` }, 404);
   }
 
+  // Old tabs upload both depots as one unversioned snapshot. Never let those
+  // requests undo protected changes saved by a newer laptop/tab.
+  if (entity === 'InsertionLive' && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !(request.method === 'POST' && actionOrId === 'filter')) {
+    return json({ error: 'Refresh this page to use protected Insertion sync. Your browser copy is kept.', code: 'INSERTION_REFRESH_REQUIRED' }, 409);
+  }
+
   await ensureSchema(env.DB);
 
   const url = new URL(request.url);

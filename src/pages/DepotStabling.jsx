@@ -11,6 +11,9 @@ import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
 import SecureSessionLoading from "../components/SecureSessionLoading";
+import InsertionSaveStatus from "../components/depot/InsertionSaveStatus";
+import "../insertionSaveStatus.css";
+import { createInsertionSyncController, createInsertionTransport } from "../lib/insertionLiveSync";
 import { getStablingSyncTooltipCopy } from "../lib/stablingSyncTooltip";
 import HiddenRequestRemarks from "../components/HiddenRequestRemarks";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
@@ -1914,8 +1917,6 @@ const INSERTION_LOG_KEY = "insertionLogState_v1";
 const INSERTION_LIVE_LOCAL_UPDATED_KEY = "insertionLiveLocalUpdatedAt_v1";
 const INSERTION_LIVE_RECORD_KEY = "insertion-live-main";
 const INSERTION_LIVE_SYNC_INTERVAL_MS = 5000;
-const INSERTION_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
-const INSERTION_LIVE_POST_SAVE_HOLD_MS = 12000;
 const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
@@ -6130,6 +6131,10 @@ function InsertionEditableHeaderControls({
   canRedo = false,
   isDirty = false,
   tooltipPlacement = "top",
+  saveStatus = null,
+  onRetrySave,
+  onUseShared,
+  isRefreshing = false,
 }) {
   const syncTooltip = getStablingSyncTooltipCopy({ depotCode, workLabel, isDirty });
 
@@ -6190,7 +6195,7 @@ function InsertionEditableHeaderControls({
         <button
           type="button"
           onClick={onRefresh}
-          disabled={!isDirty}
+          disabled={!isDirty || isRefreshing}
           aria-label={syncTooltip.accessibleLabel}
           className={`theme-insertion-refresh-button ${isDirty ? "is-dirty" : "is-synced"} group inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100`}
           style={isDirty ? {
@@ -6204,6 +6209,7 @@ function InsertionEditableHeaderControls({
           Sync from Main
         </button>
       </ActionTooltip>
+      {saveStatus && <InsertionSaveStatus depot={depotCode === "ED" ? "east" : "west"} status={saveStatus} onRetry={onRetrySave} onUseShared={onUseShared} />}
     </div>
   );
 }
@@ -7257,7 +7263,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, saveStatus = null, onRetrySave, onUseShared, isRefreshing = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [sectionSearch, setSectionSearch] = useState("");
@@ -7518,6 +7524,10 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
             canRedo={canRedoStabling}
             isDirty={isStablingDirty}
             tooltipPlacement={tooltipPlacement}
+            saveStatus={saveStatus}
+            onRetrySave={onRetrySave}
+            onUseShared={onUseShared}
+            isRefreshing={isRefreshing}
           />
         }
       />
@@ -17949,7 +17959,6 @@ export default function DepotStablingPage() {
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
   const [insertionLiveLastSynced, setInsertionLiveLastSynced] = useState(null);
   const [insertionLiveSyncError, setInsertionLiveSyncError] = useState(false);
-  const [insertionLiveDbReady, setInsertionLiveDbReady] = useState(() => isInsertionLiveEntityReady());
   const [insertionLiveDebug, setInsertionLiveDebug] = useState("");
   const [flashingCells, setFlashingCells] = useState(new Set());
 
@@ -18884,12 +18893,6 @@ export default function DepotStablingPage() {
   const pstLiveLocalUpdatedAtRef = useRef(Date.parse(savedPST.updatedAt || "") || 0);
   const pstLiveRemoteUpdatedAtRef = useRef(0);
 
-  const insertionLiveRecordIdRef = useRef(null);
-  const insertionLiveAutoSaveTimerRef = useRef(null);
-  const insertionLiveSavingRef = useRef(false);
-  const insertionLivePendingSaveRef = useRef(false);
-  const insertionLivePollingRef = useRef(false);
-  const insertionLiveLocalEditUntilRef = useRef(0);
   const insertionLiveApplyingRemoteRef = useRef(false);
   const insertionLogRef = useRef(insertionLog);
   const tidInputsRef = useRef(tidInputs);
@@ -18901,8 +18904,6 @@ export default function DepotStablingPage() {
     west: { past: [], future: [] },
     east: { past: [], future: [] },
   });
-  const insertionLiveLocalUpdatedAtRef = useRef(loadInsertionLiveLocalUpdatedMs());
-  const insertionLiveRemoteUpdatedAtRef = useRef(0);
 
   useEffect(() => { pstStateRef.current = pstState; }, [pstState]);
   useEffect(() => { prepStateRef.current = prepState; }, [prepState]);
@@ -18948,8 +18949,6 @@ export default function DepotStablingPage() {
   const markInsertionLiveLocalEdit = useCallback(() => {
     const now = Date.now();
     insertionLiveApplyingRemoteRef.current = false;
-    insertionLiveLocalUpdatedAtRef.current = now;
-    insertionLiveLocalEditUntilRef.current = now + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
     saveInsertionLiveLocalUpdatedAt(now);
   }, []);
 
@@ -19365,146 +19364,49 @@ export default function DepotStablingPage() {
     ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
     : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
+  const [insertionSyncController] = useState(() => {
+    let storage;
+    try { storage = window.localStorage; } catch { /* Pending input remains in memory. */ }
+    return createInsertionSyncController({
+      transport: createInsertionTransport(), storage,
+      initialState: { insertionLog, tidInputs, activePg: activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs },
+    });
+  });
+  const [insertionSaveStatus, setInsertionSaveStatus] = useState(insertionSyncController.getView().depots);
+  const [insertionMainSyncStatus, setInsertionMainSyncStatus] = useState({ west: null, east: null });
+  const insertionMainSyncBusyRef = useRef({ west: false, east: false });
+
   const applyInsertionLiveState = useCallback((incomingState) => {
     const normalized = normalizeInsertionLiveState(incomingState);
-    const incomingUpdatedMs = Date.parse(normalized.updatedAt || "");
-    const localUpdatedMs = insertionLiveLocalUpdatedAtRef.current || 0;
-
-    // Prevent an older in-flight sync response or eventual-consistency DB read
-    // from overwriting a fresh local Insertion / PG2 edit after a browser refresh.
-    if (Date.now() < insertionLiveLocalEditUntilRef.current) return;
-    // Do not use a one-second tolerance here. If the user refreshes immediately
-    // after editing PG2, the D1 snapshot can be slightly older and would wipe
-    // the local PG2 west/east changes before the debounced save finishes.
-    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs < localUpdatedMs)) return;
-
-    if (incomingUpdatedMs) {
-      insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, incomingUpdatedMs);
-      insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, incomingUpdatedMs);
-      saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
-    }
-
     insertionLiveApplyingRemoteRef.current = true;
-
+    const previousLayout = pg2StablingRef.current;
+    if (JSON.stringify(previousLayout) !== JSON.stringify(normalized.pg2Stabling)) {
+      insertionEditHistoryRef.current = { west: { past: [], future: [] }, east: { past: [], future: [] } };
+      setInsertionEditHistoryRevision((revision) => revision + 1);
+    }
     insertionLogRef.current = normalized.insertionLog;
     tidInputsRef.current = normalized.tidInputs;
+    activeInsertionPgRef.current = normalized.activePg;
+    pg2StablingRef.current = normalized.pg2Stabling;
+    pg2InsertionLogRef.current = normalized.pg2InsertionLog;
+    pg2TidInputsRef.current = normalized.pg2TidInputs;
     setInsertionLog(normalized.insertionLog);
     setTidInputs(normalized.tidInputs);
+    setActiveInsertionPg(normalized.activePg);
+    setPg2Stabling(normalized.pg2Stabling);
+    setPg2InsertionLog(normalized.pg2InsertionLog);
+    setPg2TidInputs(normalized.pg2TidInputs);
     saveInsertionLog(normalized.insertionLog);
     saveTidInputs(normalized.tidInputs);
-
-    if (normalized.activePg) {
-      activeInsertionPgRef.current = normalized.activePg;
-      setActiveInsertionPg(normalized.activePg);
-      saveInsertionActivePg(normalized.activePg);
-    }
-
-    if (normalized.pg2Stabling) {
-      pg2StablingRef.current = normalized.pg2Stabling;
-      setPg2Stabling(normalized.pg2Stabling);
-      saveInsertionPg2Stabling(normalized.pg2Stabling);
-    }
-    if (Array.isArray(normalized.pg2InsertionLog)) {
-      pg2InsertionLogRef.current = normalized.pg2InsertionLog;
-      setPg2InsertionLog(normalized.pg2InsertionLog);
-      saveInsertionPg2Log(normalized.pg2InsertionLog);
-    }
-    if (normalized.pg2TidInputs && typeof normalized.pg2TidInputs === "object") {
-      pg2TidInputsRef.current = normalized.pg2TidInputs;
-      setPg2TidInputs(normalized.pg2TidInputs);
-      saveInsertionPg2TidInputs(normalized.pg2TidInputs);
-    }
-
-    // A newer shared editable-stabling snapshot replaces the local undo chain.
-    // Keeping old history here could undo into another controller's stale layout.
-    insertionEditHistoryRef.current = {
-      west: { past: [], future: [] },
-      east: { past: [], future: [] },
-    };
-    setInsertionEditHistoryRevision((revision) => revision + 1);
-  }, []);
-
-  const saveInsertionLiveToDb = useCallback(async (state) => {
-    const entity = getInsertionLiveEntity();
-    const payload = buildInsertionLivePayload(state);
-
-    saveInsertionLog(payload.insertionLog);
-    saveTidInputs(payload.tidInputs);
-    saveInsertionActivePg(payload.activePg);
-    saveInsertionPg2Stabling(payload.pg2Stabling);
-    saveInsertionPg2Log(payload.pg2InsertionLog);
-    saveInsertionPg2TidInputs(payload.pg2TidInputs);
-    saveInsertionLiveLocalUpdatedAt(payload.updatedAt);
-    insertionLiveLocalUpdatedAtRef.current = Date.parse(payload.updatedAt || "") || insertionLiveLocalUpdatedAtRef.current || Date.now();
-
-    if (!isInsertionLiveEntityReady(entity)) {
-      setInsertionLiveDbReady(false);
-      setInsertionLiveSyncError(true);
-      setInsertionLiveDebug(
-        "InsertionLive entity is not available yet. Create/commit the InsertionLive entity in Base44, redeploy/sync, then hard refresh."
-      );
-      insertionLivePendingSaveRef.current = false;
-      return;
-    }
-
-    insertionLiveSavingRef.current = true;
-    setInsertionLiveSyncing(true);
-
-    try {
-      if (insertionLiveRecordIdRef.current) {
-        await entity.update(insertionLiveRecordIdRef.current, payload);
-      } else {
-        const created = await entity.create(payload);
-        if (created?.id) insertionLiveRecordIdRef.current = created.id;
-      }
-
-      const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
-      if (payloadUpdatedMs) {
-        insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
-        insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
-        saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
-      }
-
-      setInsertionLiveLastSynced(new Date());
-      setInsertionLiveSyncError(false);
-      setInsertionLiveDbReady(true);
-      setInsertionLiveDebug("");
-    } catch (err) {
-      const message = err?.message || err?.response?.data?.message || String(err);
-      console.error("Insertion live save failed:", err);
-      setInsertionLiveSyncError(true);
-      setInsertionLiveDebug(`Insertion live save failed: ${message}`);
-    } finally {
-      insertionLiveLocalEditUntilRef.current = Date.now() + INSERTION_LIVE_POST_SAVE_HOLD_MS;
-      insertionLivePendingSaveRef.current = false;
-      insertionLiveSavingRef.current = false;
-      setInsertionLiveSyncing(false);
-    }
+    saveInsertionActivePg(normalized.activePg);
+    saveInsertionPg2Stabling(normalized.pg2Stabling);
+    saveInsertionPg2Log(normalized.pg2InsertionLog);
+    saveInsertionPg2TidInputs(normalized.pg2TidInputs);
   }, []);
 
   const scheduleInsertionLiveSave = useCallback((state) => {
-    const payload = buildInsertionLivePayload(state);
-
-    saveInsertionLog(payload.insertionLog);
-    saveTidInputs(payload.tidInputs);
-    saveInsertionActivePg(payload.activePg);
-    saveInsertionPg2Stabling(payload.pg2Stabling);
-    saveInsertionPg2Log(payload.pg2InsertionLog);
-    saveInsertionPg2TidInputs(payload.pg2TidInputs);
-    saveInsertionLiveLocalUpdatedAt(payload.updatedAt);
-    insertionLiveLocalUpdatedAtRef.current = Date.parse(payload.updatedAt || "") || insertionLiveLocalUpdatedAtRef.current || Date.now();
-
-    insertionLivePendingSaveRef.current = true;
-    insertionLiveLocalEditUntilRef.current = Date.now() + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
-
-    if (insertionLiveAutoSaveTimerRef.current) {
-      clearTimeout(insertionLiveAutoSaveTimerRef.current);
-    }
-
-    insertionLiveAutoSaveTimerRef.current = setTimeout(() => {
-      saveInsertionLiveToDb(payload);
-    }, 1200);
-  }, [saveInsertionLiveToDb]);
+    insertionSyncController.update(state);
+  }, [insertionSyncController]);
 
   const commitInsertionLiveSnapshot = useCallback((overrides = {}) => {
     scheduleInsertionLiveSave({
@@ -19517,142 +19419,53 @@ export default function DepotStablingPage() {
     });
   }, [scheduleInsertionLiveSave]);
 
-  const refreshInsertionLiveFromDb = useCallback(async ({ showStatus = false } = {}) => {
-    const entity = getInsertionLiveEntity();
-
-    if (!isInsertionLiveEntityReady(entity)) {
-      setInsertionLiveDbReady(false);
-      setInsertionLiveLoaded(true);
-      setInsertionLiveDebug(
-        "InsertionLive entity is not available yet. Insertion will remain local only until the entity is added."
-      );
-      return;
-    }
-
-    if (
-      Date.now() < insertionLiveLocalEditUntilRef.current ||
-      insertionLiveSavingRef.current ||
-      insertionLivePendingSaveRef.current ||
-      insertionLivePollingRef.current
-    ) {
-      return;
-    }
-
-    insertionLivePollingRef.current = true;
-    if (showStatus) setInsertionLiveSyncing(true);
-
-    try {
-      const records = await entity.list();
-      const record = selectInsertionLiveRecord(records);
-
-      if (!record) {
-        const payload = buildInsertionLivePayload({
-          insertionLog: insertionLogRef.current,
-          tidInputs: tidInputsRef.current,
-          activePg: activeInsertionPgRef.current,
-          pg2Stabling: pg2StablingRef.current,
-          pg2InsertionLog: pg2InsertionLogRef.current,
-          pg2TidInputs: pg2TidInputsRef.current,
-        });
-        const created = await entity.create(payload);
-        if (created?.id) insertionLiveRecordIdRef.current = created.id;
-
-        const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
-        if (payloadUpdatedMs) {
-          insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
-          insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
-          saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
-        }
-
-        setInsertionLiveLastSynced(new Date());
-        setInsertionLiveSyncError(false);
-        setInsertionLiveDbReady(true);
-        setInsertionLiveDebug("");
-        setInsertionLiveLoaded(true);
-        return;
-      }
-
-      if (record?.id) insertionLiveRecordIdRef.current = record.id;
-
-      applyInsertionLiveState(record);
-      setInsertionLiveLastSynced(new Date());
-      setInsertionLiveSyncError(false);
-      setInsertionLiveDbReady(true);
-      setInsertionLiveDebug("");
-      setInsertionLiveLoaded(true);
-    } catch (err) {
-      const message = err?.message || err?.response?.data?.message || String(err);
-      console.error("Insertion live sync failed:", err);
-      setInsertionLiveSyncError(true);
-      setInsertionLiveDebug(`Insertion live sync failed: ${message}`);
-      setInsertionLiveLoaded(true);
-    } finally {
-      insertionLivePollingRef.current = false;
-      if (showStatus) setInsertionLiveSyncing(false);
-    }
-  }, [applyInsertionLiveState]);
+  const refreshInsertionLiveFromDb = useCallback(() => insertionSyncController.refresh(), [insertionSyncController]);
 
   useEffect(() => {
-    refreshInsertionLiveFromDb({ showStatus: true });
-  }, [refreshInsertionLiveFromDb]);
-
-  useEffect(() => {
-    if (!insertionLiveLoaded || !insertionLiveDbReady) return;
-
-    const interval = setInterval(() => {
-      refreshInsertionLiveFromDb({ showStatus: true });
-    }, INSERTION_LIVE_SYNC_INTERVAL_MS);
-
-    return () => clearInterval(interval);
-  }, [insertionLiveLoaded, insertionLiveDbReady, refreshInsertionLiveFromDb]);
-
-  useEffect(() => {
-    const payload = {
-      insertionLog,
-      tidInputs,
-      activePg: activeInsertionPg,
-      pg2Stabling,
-      pg2InsertionLog,
-      pg2TidInputs,
+    insertionSyncController.start();
+    const receive = (view) => {
+      applyInsertionLiveState({ ...view.state, updatedAt: view.updatedAt || '' });
+      setInsertionSaveStatus(view.depots);
+      setInsertionLiveLoaded(view.ready);
+      const statuses = Object.values(view.depots);
+      setInsertionLiveSyncError(statuses.some((status) => status.phase === 'failed'));
+      setInsertionLiveSyncing(statuses.some((status) => ['loading', 'pending', 'saving'].includes(status.phase)));
+      setInsertionLiveDebug(statuses.map((status) => status.error).filter(Boolean).join(' '));
+      if (view.updatedAt) setInsertionLiveLastSynced(new Date(view.updatedAt));
     };
+    const unsubscribe = insertionSyncController.subscribe(receive);
+    receive(insertionSyncController.getView());
+    void refreshInsertionLiveFromDb({ showStatus: true });
+    const refresh = () => { if (!document.hidden) void insertionSyncController.refresh(); };
+    const retry = () => { void insertionSyncController.flush(); };
+    const beforeUnload = (event) => {
+      if (insertionSyncController.getView().pending) { event.preventDefault(); event.returnValue = ''; }
+    };
+    const interval = setInterval(refresh, INSERTION_LIVE_SYNC_INTERVAL_MS);
+    window.addEventListener('online', retry);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+      window.removeEventListener('online', retry);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('visibilitychange', refresh);
+      insertionSyncController.stop();
+    };
+  }, [applyInsertionLiveState, insertionSyncController, refreshInsertionLiveFromDb]);
 
-    saveInsertionLog(sortInsertionLogByTime(insertionLog));
-    saveTidInputs(tidInputs);
-    saveInsertionActivePg(activeInsertionPg);
-    saveInsertionPg2Stabling(pg2Stabling);
-    saveInsertionPg2Log(pg2InsertionLog);
-    saveInsertionPg2TidInputs(pg2TidInputs);
-
-    if (insertionLiveApplyingRemoteRef.current) {
-      insertionLiveApplyingRemoteRef.current = false;
-      return;
-    }
-
+  useEffect(() => {
+    const payload = { insertionLog, tidInputs, activePg: activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs };
+    if (insertionLiveApplyingRemoteRef.current) { insertionLiveApplyingRemoteRef.current = false; return; }
     if (!insertionLiveLoaded) return;
     scheduleInsertionLiveSave(payload);
   }, [insertionLog, tidInputs, activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
 
-  useEffect(() => {
-    return () => {
-      if (insertionLiveAutoSaveTimerRef.current) {
-        clearTimeout(insertionLiveAutoSaveTimerRef.current);
-      }
-    };
-  }, []);
-
-  const insertionLiveStatusText = !insertionLiveDbReady
-    ? "Insertion Local only"
-    : insertionLiveSyncError
-    ? "Insertion Sync issue"
-    : insertionLiveSyncing
-    ? "Insertion Syncing..."
-    : insertionLiveLastSynced
-    ? `Insertion Live synced ${formatTime(insertionLiveLastSynced)}`
-    : "Insertion Live ready";
-
-  const insertionLiveStatusClass = !insertionLiveDbReady || insertionLiveSyncError
-    ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
-    : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
+  const insertionLiveStatusText = insertionLiveSyncError ? "Insertion save failed" : insertionLiveSyncing ? "Insertion Saving..." : insertionLiveLastSynced ? "Insertion Saved" : "Insertion Live ready";
+  const insertionLiveStatusClass = insertionLiveSyncError ? "text-red-300" : "text-emerald-300";
 
   const focusCell = useCallback((depot, roadIndex, visualIndex) => {
     const key = `${depot}-${roadIndex}-${visualIndex}`;
@@ -20957,46 +20770,55 @@ export default function DepotStablingPage() {
     });
   }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, rememberInsertionEditableDepot]);
 
-  const handleRefreshEditableStablingFromMain = useCallback((depot) => {
-    markInsertionLiveLocalEdit();
+  const handleRefreshEditableStablingFromMain = useCallback(async (depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
-    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
-    const currentPg2Stabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
-
-    const currentSnapshot = getInsertionEditableDepotSnapshot(normalizedDepot);
-    const mainDepotData = normalizedDepot === "west" ? westDataRef.current : eastDataRef.current;
-    const hasLayoutChanges = !insertionStablingTrainPositionsMatch(currentSnapshot.stabling, mainDepotData, targetRoads);
-    const hasInsertionWork = currentSnapshot.insertionLog.length > 0 || Object.values(currentSnapshot.tidInputs).some((value) => String(value || "").trim());
-    if (hasLayoutChanges || hasInsertionWork) rememberInsertionEditableDepot(normalizedDepot);
-
-    // Refresh only the selected depot. The other depot's editable layout and work stay untouched.
-    const nextStabling = cloneInsertionStablingState(currentPg2Stabling?.westData || {}, currentPg2Stabling?.eastData || {});
-    if (normalizedDepot === "west") {
-      nextStabling.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
-    } else {
-      nextStabling.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
+    if (insertionMainSyncBusyRef.current[normalizedDepot]) return;
+    insertionMainSyncBusyRef.current[normalizedDepot] = true;
+    setInsertionMainSyncStatus((previous) => ({ ...previous, [normalizedDepot]: { phase: "loading" } }));
+    try {
+      if (pendingSaveRef.current || isSavingRef.current) throw new Error("Main Stabling is still saving. Wait for it to finish, then retry.");
+      const records = await base44.entities.DepotStabling.list();
+      const { newWest, newEast } = buildStablingStateFromRecords(records);
+      const remoteUpdatedMs = getStablingRecordsUpdatedMs(records);
+      if (pendingSaveRef.current || isSavingRef.current || (stablingLocalUpdatedAtRef.current && remoteUpdatedMs < stablingLocalUpdatedAtRef.current)) {
+        throw new Error("The latest Main Stabling is not confirmed yet. Nothing was reset; please retry.");
+      }
+      const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+      const currentSnapshot = getInsertionEditableDepotSnapshot(normalizedDepot);
+      const mainDepotData = normalizedDepot === "west" ? newWest : newEast;
+      const hasLayoutChanges = !insertionStablingTrainPositionsMatch(currentSnapshot.stabling, mainDepotData, targetRoads);
+      const hasInsertionWork = currentSnapshot.insertionLog.length > 0 || Object.values(currentSnapshot.tidInputs).some((value) => String(value || "").trim());
+      if (hasInsertionWork && !window.confirm("Sync " + (normalizedDepot === "west" ? "West" : "East") + " Depot from Main? This replaces its editable layout and clears its insertion entries and TID inputs. The other depot is unchanged.")) return;
+      if (hasLayoutChanges || hasInsertionWork) rememberInsertionEditableDepot(normalizedDepot);
+      markInsertionLiveLocalEdit();
+      const current = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+      const nextStabling = cloneInsertionStablingState(current.westData, current.eastData);
+      nextStabling[normalizedDepot === "west" ? "westData" : "eastData"] = normalizeStablingDepotData(mainDepotData, targetRoads);
+      const nextLog = (pg2InsertionLogRef.current || []).filter((entry) => normalizeDepotKey(entry?.depot || getDepotFromRoad(entry?.road || "")) !== normalizedDepot);
+      const nextInputs = { ...(pg2TidInputsRef.current || {}) };
+      targetRoads.forEach((road) => { for (let bi = 0; bi < 7; bi += 1) delete nextInputs[road + "-" + bi]; });
+      westDataRef.current = newWest;
+      eastDataRef.current = newEast;
+      setWestData(newWest);
+      setEastData(newEast);
+      if (remoteUpdatedMs) {
+        stablingRemoteUpdatedAtRef.current = Math.max(stablingRemoteUpdatedAtRef.current, remoteUpdatedMs);
+        stablingLocalUpdatedAtRef.current = Math.max(stablingLocalUpdatedAtRef.current, remoteUpdatedMs);
+      }
+      pg2StablingRef.current = nextStabling;
+      pg2InsertionLogRef.current = nextLog;
+      pg2TidInputsRef.current = nextInputs;
+      setPg2Stabling(nextStabling);
+      setPg2InsertionLog(nextLog);
+      setPg2TidInputs(nextInputs);
+      commitInsertionLiveSnapshot({ pg2Stabling: nextStabling, pg2InsertionLog: nextLog, pg2TidInputs: nextInputs });
+    } catch (error) {
+      setInsertionMainSyncStatus((previous) => ({ ...previous, [normalizedDepot]: { phase: "failed", error: error.message || "Could not load Main. Nothing was reset.", retryLabel: "Retry sync" } }));
+      return;
+    } finally {
+      insertionMainSyncBusyRef.current[normalizedDepot] = false;
+      setInsertionMainSyncStatus((previous) => previous[normalizedDepot]?.phase === "loading" ? { ...previous, [normalizedDepot]: null } : previous);
     }
-
-    const nextLog = (pg2InsertionLogRef.current || []).filter((entry) => entry?.depot !== normalizedDepot);
-    const nextInputs = { ...(pg2TidInputsRef.current || {}) };
-    targetRoads.forEach((road) => {
-      for (let bi = 0; bi < 7; bi += 1) delete nextInputs[`${road}-${bi}`];
-    });
-
-    pg2StablingRef.current = nextStabling;
-    pg2InsertionLogRef.current = nextLog;
-    pg2TidInputsRef.current = nextInputs;
-    saveInsertionPg2Stabling(nextStabling);
-    saveInsertionPg2Log(nextLog);
-    saveInsertionPg2TidInputs(nextInputs);
-    setPg2Stabling(nextStabling);
-    setPg2InsertionLog(nextLog);
-    setPg2TidInputs(nextInputs);
-    commitInsertionLiveSnapshot({
-      pg2Stabling: nextStabling,
-      pg2InsertionLog: nextLog,
-      pg2TidInputs: nextInputs,
-    });
   }, [commitInsertionLiveSnapshot, getInsertionEditableDepotSnapshot, markInsertionLiveLocalEdit, rememberInsertionEditableDepot]);
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
@@ -22189,6 +22011,14 @@ export default function DepotStablingPage() {
       canUndoStabling: isWest ? westCanUndoInsertionStabling : eastCanUndoInsertionStabling,
       canRedoStabling: isWest ? westCanRedoInsertionStabling : eastCanRedoInsertionStabling,
       isStablingDirty: isWest ? westInsertionStablingDirty : eastInsertionStablingDirty,
+      saveStatus: insertionMainSyncStatus[normalizedDepot] || insertionSaveStatus[normalizedDepot],
+      isRefreshing: insertionMainSyncBusyRef.current[normalizedDepot],
+      onRetrySave: () => insertionMainSyncStatus[normalizedDepot]?.phase === "failed"
+        ? handleRefreshEditableStablingFromMain(normalizedDepot)
+        : insertionSyncController.flush(),
+      onUseShared: () => {
+        if (window.confirm("Discard unsaved " + (isWest ? "West" : "East") + " Depot changes in this browser and use the latest shared values?")) insertionSyncController.useShared(normalizedDepot);
+      },
       data: isWest ? pg2Stabling.westData : pg2Stabling.eastData,
       insertionLog: pg2InsertionLog,
       onInsertionTick: handlePg2InsertionTick,
