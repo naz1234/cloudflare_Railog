@@ -1,3 +1,25 @@
+/* Keep a long sync warning below the edit controls, never over the help note. */
+.theme-insertion-section .insertion-save-feedback {
+  min-width: 0;
+  max-width: 100%;
+}
+.theme-insertion-section .insertion-save-feedback.has-error {
+  flex-basis: 100%;
+  width: 100%;
+}
+.theme-insertion-section .insertion-save-feedback > :not(.insertion-save-error) {
+  flex-shrink: 0;
+}
+.theme-insertion-section .insertion-save-feedback .insertion-save-error {
+  flex-basis: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
 html[data-app-theme="light"] .insertion-save-feedback [data-save-state="saved"] {
   color: #076344;
   background: #e6f8ef;

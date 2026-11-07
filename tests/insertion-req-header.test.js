@@ -37,13 +37,16 @@ test('desktop title, icon, count and neutral actions match the REQ design tokens
   }
 });
 
-test('desktop actions move to the header while a remark note replaces the secondary counters', () => {
+test('desktop actions stay in the header while the remark note flows below variable-height sync controls', () => {
   const actions = find('.theme-insertion-search-actions');
   assert.equal(value(actions, 'position'), 'absolute');
   assert.equal(value(actions, 'top'), '16px');
   assert.equal(value(actions, 'right'), '76px');
-  assert.equal(value(find('.insertion-tracking-remark-note'), 'position'), 'absolute');
-  assert.equal(value(find('.insertion-tracking-remark-note'), 'max-width'), 'calc(100% - 432px)');
+  assert.equal(find('.insertion-tracking-remark-note'), undefined);
+  const note = parsed.nodes.find(node => node.type === 'rule' && node.selector.endsWith('.insertion-tracking-remark-note'));
+  assert.equal(value(note, 'margin'), '0 0 12px');
+  assert.equal(value(note, 'max-width'), '100%');
+  assert.equal(value(note, 'overflow-wrap'), 'anywhere');
   assert.match(page, /className="insertion-tracking-remark-note" role="note"/);
   assert.match(page, /Tracking ID also accepts remarks: <strong>SW<\/strong>, <strong>3K1<\/strong>/);
   assert.match(page, /sectionDepot === "east" && <>, <strong>SW ATWP<\/strong><\/>/);
