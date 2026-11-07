@@ -1,0 +1,17 @@
+html[data-app-theme="light"] .insertion-save-feedback [data-save-state="saved"] {
+  color: #076344;
+  background: #e6f8ef;
+  border-color: #31a87e;
+}
+html[data-app-theme="light"] .insertion-save-feedback [data-save-state="saving"] {
+  color: #7a4d00;
+  background: #fff6df;
+  border-color: #ca9a32;
+}
+html[data-app-theme="light"] .insertion-save-feedback [data-save-state="failed"] {
+  color: #9b1c25;
+  background: #fff0f0;
+  border-color: #d9616a;
+}
+html[data-app-theme="light"] .insertion-save-feedback .insertion-save-error { color: #9b1c25; }
+html[data-app-theme="light"] .insertion-save-feedback button { color: #075985; }

@@ -44,7 +44,7 @@ test("Insertion Refresh keeps its warning glow with a circular arrow icon", () =
   assert.match(controlsSource, /isDirty \? "is-dirty" : "is-synced"/);
   assert.doesNotMatch(controlsSource, /Flame|refreshIcon/);
   assert.match(controlsSource, /<RefreshCw className=\{`theme-insertion-refresh-icon/);
-  assert.match(controlsSource, /onClick=\{onRefresh\}[\s\S]*disabled=\{!isDirty\}[\s\S]*disabled:cursor-not-allowed/);
+  assert.match(controlsSource, /onClick=\{onRefresh\}[\s\S]*disabled=\{!isDirty \|\| isRefreshing\}[\s\S]*disabled:cursor-not-allowed/);
   assert.match(stylesheetSource, /\.theme-insertion-refresh-button\.is-synced \{[\s\S]*background: #071828;[\s\S]*color: #7890a4;/);
   assert.match(pageSource, /westInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(pageSource, /eastInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);

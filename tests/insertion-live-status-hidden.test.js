@@ -16,7 +16,7 @@ test("Insertion live status is hidden without disabling synchronization", () => 
   );
   assert.match(
     source,
-    /setInterval\(\(\) => \{\s*refreshInsertionLiveFromDb\(\{ showStatus: true \}\);\s*\}, INSERTION_LIVE_SYNC_INTERVAL_MS\)/
+    /setInterval\(refresh, INSERTION_LIVE_SYNC_INTERVAL_MS\)/
   );
   assert.match(source, /scheduleInsertionLiveSave\(payload\);/);
 });
