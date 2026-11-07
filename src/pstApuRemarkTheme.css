@@ -1,4 +1,4 @@
-/* Visual APU remark flag only. Match the approved REQ UNFIT surface without
+/* Visual APU ALARM remark flag only. Match the approved REQ UNFIT surface without
    changing fitness, completion colours inside controls, geometry or light mode. */
 html[data-app-theme="dark"] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-pst-card.has-apu-remark:not(.is-empty):not(.is-search-match) {
   background: linear-gradient(135deg, #2d0a0a, #1a0505) !important;

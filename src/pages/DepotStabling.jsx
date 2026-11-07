@@ -87,7 +87,7 @@ import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, n
 import "../trainRemHdw40.css";
 import "../stablingSlate.css";
 import "../reqRemarkThemes.css";
-import { getStablingRemarkTheme } from "../lib/reqStablingRemarkTheme";
+import { getStablingRemarkTheme, isApuAlarmRemark } from "../lib/reqStablingRemarkTheme";
 import "../movementLogSlate.css";
 import "../tp1MovementReqSlate.css";
 import "../copyFeedbackSlate.css";
@@ -5051,7 +5051,7 @@ function getRequestApuTrainKeys(requests = []) {
   return new Set(
     (Array.isArray(requests) ? requests : [])
       .filter((request) => request?.groupHidden !== true &&
-        /(^|[^A-Z0-9])APU($|[^A-Z0-9])/i.test(getTrainRequestGroupDisplayTitle(request)))
+        isApuAlarmRemark(getTrainRequestGroupDisplayTitle(request)))
       .map((request) => normalizeTrainId(request.trainId))
       .filter(Boolean)
   );
@@ -5061,12 +5061,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  // Active PST or REQ APU remarks supply a visual flag only. This does not
+  // Active PST or REQ APU ALARM remarks supply a visual flag only. This does not
   // change fitness, PST/Prep completion or the separate APU checker selection.
   const hasApuRemark = Boolean(key && (hasReqApuRemark || (maintenanceMap?.[key] || []).some((item) =>
-    /(^|[^A-Z0-9])APU($|[^A-Z0-9])/i.test(String(
+    isApuAlarmRemark(
       item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
-    ))
+    )
   )));
   // PST remarks are intentionally isolated from the main Train Request and
   // stabling manual remarks. Display only entries created in the PST panel.

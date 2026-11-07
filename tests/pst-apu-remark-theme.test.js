@@ -5,6 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
 import postcss from 'postcss';
+import { isApuAlarmRemark } from '../src/lib/reqStablingRemarkTheme.js';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
 const requestHelpers = ['normalizeTrainId', 'cleanRequestLabel', 'getTrainRequestDisplayType', 'getTrainRequestGroupDisplayTitle', 'getRequestApuTrainKeys']
@@ -14,18 +15,19 @@ const requestHelpers = ['normalizeTrainId', 'cleanRequestLabel', 'getTrainReques
     assert.ok(start >= 0 && end > start, `${name} must exist`);
     return source.slice(start, end);
   }).join('\n');
-const getRequestApuTrainKeys = new Function(`${requestHelpers}\nreturn getRequestApuTrainKeys;`)();
+const getRequestApuTrainKeys = new Function('isApuAlarmRemark', `${requestHelpers}\nreturn getRequestApuTrainKeys;`)(isApuAlarmRemark);
 const cellSource = source.slice(source.indexOf('function PSTCell('), source.indexOf('function PSTStablingSection('));
 const compiled = ts.transpileModule(`const { useState } = React; ${cellSource}\nreturn PSTCell;`, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const helpers = {
+  isApuAlarmRemark,
   normalizeTrainId: (value) => value ? `T${Number(String(value).replace(/\D/g, ''))}` : '',
   normalizeRequestIdentity: (value) => value.toUpperCase(),
   getPSTRequestRemarkStyle: () => ({ background: '#233a52', color: '#a8def5' }),
   formatTrainNumberOnly: (value) => value ? String(value).replace(/^T/i, '').padStart(2, '0') : '',
 };
-const loadCell = (react) => new Function('React', 'helpers', `const { normalizeTrainId, normalizeRequestIdentity, getPSTRequestRemarkStyle, formatTrainNumberOnly } = helpers; ${compiled}`)(react, helpers);
+const loadCell = (react) => new Function('React', 'helpers', `const { normalizeTrainId, normalizeRequestIdentity, getPSTRequestRemarkStyle, formatTrainNumberOnly, isApuAlarmRemark } = helpers; ${compiled}`)(react, helpers);
 const Cell = loadCell(React);
 const noop = () => {};
 const baseProps = (depot) => ({
@@ -41,9 +43,9 @@ const render = (depot, items, overrides = {}) => renderToStaticMarkup(React.crea
   }))),
 ));
 
-test('both actual PST depot cards detect APU words across active remark labels and separators', () => {
+test('both actual PST depot cards detect APU ALARM across active remark labels and separators', () => {
   for (const depot of ['west', 'east']) {
-    for (const label of ['APU', 'apu alarm', 'APU MISMATCH', 'RST CM - APU', 'APU/no load', 'APU_MISMATCH']) {
+    for (const label of ['APU ALARM', 'apu alarm', 'APU-ALARM', 'RST CM - APU ALARM', 'APU/ALARM', 'APU_ALARM']) {
       const html = render(depot, [{ badgeText: 'Wash 7-Nov' }, { badgeText: label }]);
       assert.match(html, /class="theme-pst-card[^"\n]*has-apu-remark/);
       assert.ok(html.includes(label));
@@ -52,6 +54,20 @@ test('both actual PST depot cards detect APU words across active remark labels a
     }
     for (const field of ['badgeText', 'displayType', 'typeKey', 'remark']) {
       assert.match(render(depot, [{ [field]: 'APU alarm' }]), /has-apu-remark/);
+    }
+  }
+});
+
+test('APU mismatch and other APU text do not flag either PST depot from direct or REQ remarks', () => {
+  for (const depot of ['west', 'east']) {
+    for (const label of ['APU MISMATCH', 'APU missmatch alarm', 'APU_MISMATCH', 'APU MIS - RST CM', 'APU', 'APU no load', 'NOTAPU ALARM', 'APU ALARMING']) {
+      const hasReqApuRemark = getRequestApuTrainKeys([{ trainId: '05', requestType: 'Other', customType: label }]).has('T5');
+      assert.equal(hasReqApuRemark, false, label);
+      for (const field of ['badgeText', 'displayType', 'typeKey', 'remark']) {
+        const html = render(depot, [{ [field]: label }], { hasReqApuRemark });
+        assert.doesNotMatch(html, /has-apu-remark/, `${depot}: ${label}`);
+        assert.ok(html.includes(label), 'Non-alarm remarks remain visible');
+      }
     }
   }
 });
@@ -65,19 +81,21 @@ test('unrelated keywords, empty blocks and other trains do not flag PST cards', 
   assert.match(source, /const pstMaintenanceMap = buildMaintenanceMap\(\s*pstRequests\.filter\(\(request\) => request\?\.groupHidden !== true\)/);
 });
 
-test('REQ APU detection uses active displayed remark titles and normalized, deduplicated train IDs', () => {
+test('REQ APU ALARM detection uses active displayed remark titles and normalized, deduplicated train IDs', () => {
   const requests = Object.freeze([
     Object.freeze({ trainId: '01', requestType: 'Other', customType: 'APU alarm' }),
-    Object.freeze({ trainId: ' t 001 ', requestType: 'APU_MISMATCH' }),
-    Object.freeze({ trainId: 'T017', requestType: 'RST CM', groupTitle: 'RST CM / apu no load' }),
-    Object.freeze({ trainId: '02', requestType: 'APU', groupHidden: true }),
+    Object.freeze({ trainId: ' t 001 ', requestType: 'APU_ALARM' }),
+    Object.freeze({ trainId: 'T017', requestType: 'RST CM', groupTitle: 'RST CM / apu alarm' }),
+    Object.freeze({ trainId: '02', requestType: 'APU ALARM', groupHidden: true }),
     Object.freeze({ trainId: '03', requestType: 'Deep Clean' }),
     Object.freeze({ trainId: '04', requestType: 'UNFIT' }),
     Object.freeze({ trainId: '05', requestType: 'Least Priority' }),
-    Object.freeze({ trainId: '06', requestType: 'APU', groupTitle: 'Renamed to RST PM' }),
+    Object.freeze({ trainId: '06', requestType: 'APU ALARM', groupTitle: 'Renamed to RST PM' }),
     Object.freeze({ trainId: '07', requestType: 'CAPUCHIN' }),
     Object.freeze({ trainId: '08', requestType: 'APU123' }),
-    Object.freeze({ trainId: '', requestType: 'APU' }),
+    Object.freeze({ trainId: '09', requestType: 'APU MISMATCH' }),
+    Object.freeze({ trainId: '10', requestType: 'APU' }),
+    Object.freeze({ trainId: '', requestType: 'APU ALARM' }),
     null,
   ]);
   assert.deepEqual([...getRequestApuTrainKeys(requests)], ['T1', 'T17']);
@@ -123,6 +141,7 @@ test('REQ edits, hiding and deletion clear their APU cue while direct PST APU re
       [[active], true],
       [[{ ...active, groupHidden: true }], false],
       [[{ ...active, groupTitle: 'Wash 7-Nov' }], false],
+      [[{ ...active, groupTitle: 'APU MISMATCH' }], false],
       [[], false],
       [[{ ...active, trainId: '06' }], false],
     ]) {
@@ -132,8 +151,21 @@ test('REQ edits, hiding and deletion clear their APU cue while direct PST APU re
       assert.equal(html.includes('has-apu-remark'), expected);
       assert.match(html, /PST-only wash remark/);
       assert.doesNotMatch(html, /APU alarm/);
-      assert.match(render(depot, [{ badgeText: 'APU no load' }], { hasReqApuRemark }), /has-apu-remark/);
+      assert.match(render(depot, [{ badgeText: 'APU ALARM' }], { hasReqApuRemark }), /has-apu-remark/);
     }
+  }
+});
+
+test('separate mismatch remarks do not suppress an active APU ALARM in either source', () => {
+  for (const depot of ['west', 'east']) {
+    const mismatch = { badgeText: 'APU MISMATCH' };
+    assert.match(render(depot, [mismatch, { badgeText: 'APU ALARM' }]), /has-apu-remark/);
+    const hasReqApuRemark = getRequestApuTrainKeys([
+      { trainId: '05', requestType: 'APU MISMATCH' },
+      { trainId: '05', requestType: 'APU ALARM' },
+    ]).has('T5');
+    assert.match(render(depot, [mismatch], { hasReqApuRemark }), /has-apu-remark/);
+    assert.doesNotMatch(render(depot, [mismatch]), /has-apu-remark/);
   }
 });
 
