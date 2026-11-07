@@ -7,7 +7,8 @@ export function getStablingRemarkTheme(items = []) {
       : item?.badgeText || item?.displayType || item?.typeKey || '';
     return String(label).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
   });
-  if (labels.some(label => /\bUNFIT\b/.test(label))) return 'unfit';
+  // APU ALARM shares the warning surface; APU mismatch alone stays unchanged.
+  if (labels.some(label => /\b(?:UNFIT|APU ALARM)\b/.test(label))) return 'unfit';
   if (labels.some(label => /\bLEAST PRIORITY\b/.test(label))) return 'least-priority';
   if (labels.some(label => /\b(?:DEEP CLEAN(?:ING)?|DEEPCLEAN)\b/.test(label))) return 'deep-clean';
   return '';
