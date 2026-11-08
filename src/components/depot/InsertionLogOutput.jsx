@@ -19,8 +19,8 @@ function isSweepingLine(line = {}) {
 }
 
 function isAtwpSweepingLine(line = {}) {
-  return isSweepingLine(line) && line.depot === "east" && (
-    line.sweepTrack === "ATWP" || (!line.sweepTrack && line.signal === "ATWP ED")
+  return isSweepingLine(line) && ["west", "east"].includes(line.depot) && (
+    line.sweepTrack === "ATWP" || (!line.sweepTrack && ["ATWP ED", "ATWP WD"].includes(line.signal))
   );
 }
 
@@ -69,7 +69,10 @@ function buildSweepingCopyText(lines, depotLabel) {
 
 function getAtwpSweepingEntryText(line = {}) {
   // Keep previously saved ATWP entries consistent without changing their data.
-  return String(line.text || "").replace(/\bto signal ATWP ED\b/g, "to ATWP ED");
+  const text = String(line.text || "").replace(/\bto signal ATWP (ED|WD)\b/g, "to ATWP $1");
+  return line.depot === "west"
+    ? text.replace(/\bsweeping started from [^\r\n]*? to ATWP WD\b/g, "sweeping started from S108 to ATWP WD")
+    : text;
 }
 
 function buildAtwpSweepingCopyText(lines) {

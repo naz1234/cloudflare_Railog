@@ -95,6 +95,23 @@ test('both INS depots respond to their own APU, mismatch and technical-failure r
   }
 });
 
+test('actual West and East sweeping cards render their ATWP choice with editable timing', () => {
+  for (const depot of ['west', 'east']) {
+    const road = depot === 'west' ? 'WD-ST15' : 'ED-ST02';
+    const label = depot === 'west' ? 'ATWP WD' : 'ATWP ED';
+    const html = renderCell(depot, [], {
+      insertionLog: [{ key: `ins-${road}-0`, trainKey: 'T45', road, depot, isSweeping: true, sweepTrack: 'ATWP', signal: label, remark: 'SW ATWP', time: '04:35', clearTime: '04:37' }],
+    });
+    assert.match(html, />SW ATWP<\/div>/);
+    assert.ok(html.includes(`>${label}</option>`));
+    assert.match(html, /<option value="ATWP"[^>]*selected/);
+    assert.match(html, /value="04:35"/);
+    assert.match(html, /value="04:37"/);
+    assert.match(html, />Track 01<\/option>/);
+    assert.match(html, />Track 02<\/option>/);
+  }
+});
+
 test('INS checks the full active remark list, uses UNFIT priority, and restores neutral cards when remarks are removed', () => {
   const remarks = ['Wash 4-Nov', 'RST PM', 'Deep Clean', 'FIT but LEAST PRIORITY', 'Unfit by TSM'].map(badgeText => ({ badgeText }));
   const before = structuredClone(remarks);

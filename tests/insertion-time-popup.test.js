@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import { defaultSweepEndTime, getInsertionLogTiming, normalizeInsertionLogTime, previewInsertionLogTiming } from "../src/lib/insertionLogTiming.js";
 import { normalizeInsertionTaName, withoutInsertionTaSuffix } from "../src/lib/insertionTaName.js";
+import { validateInsertionChanges } from "../shared/insertion-sync.js";
 
 const page = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 const output = readFileSync(new URL("../src/components/depot/InsertionLogOutput.jsx", import.meta.url), "utf8");
@@ -28,6 +29,8 @@ function createApi(initialLog = [], currentTime = "08:42") {
   const sandbox = {
     useCallback: (fn) => fn,
     pg2InsertionLogRef: state,
+    setInsertionLog: (update) => { state.current = typeof update === "function" ? update(state.current) : update; },
+    saveInsertionLog: (log) => { writes.stored = JSON.stringify(log); },
     markInsertionLiveLocalEdit: () => { writes.marked = true; },
     saveInsertionPg2Log: (log) => { writes.stored = JSON.stringify(log); },
     setPg2InsertionLog: (log) => { writes.rendered = log; },
@@ -42,9 +45,9 @@ function createApi(initialLog = [], currentTime = "08:42") {
     page.match(/const EAST_ROADS = .*;/)[0],
     page.match(/const WEST_ROADS = .*;/)[0],
     ...helpers.map(extractFunction),
-    ...["applyInsertionTickToLog", "handlePg2InsertionTick", "updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "updateInsertionEntryTaNameInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate", "handlePg2InsertionTaNameUpdate"].map(callback),
+    ...["applyInsertionTickToLog", "handleInsertionTick", "handlePg2InsertionTick", "updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "updateInsertionEntryTaNameInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate", "handlePg2InsertionTaNameUpdate"].map(callback),
     output.slice(output.indexOf("function formatSentenceList"), output.indexOf("async function copyText")),
-    "globalThis.api = { handlePg2InsertionTick, updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, handlePg2InsertionTaNameUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
+    "globalThis.api = { handleInsertionTick, handlePg2InsertionTick, updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, handlePg2InsertionTaNameUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
   ].join("\n"), sandbox);
   return { ...sandbox.api, state, writes };
 }
@@ -87,33 +90,65 @@ test("saved ATWP output drops signal in both display and copy without changing o
   assert.match(api.buildSweepAnd3K1CopyText([ordinary], [], "West"), /to signal S101 at 45 kph/);
 });
 
-test("SW ATWP is unavailable in West and never creates a normal or sweeping entry there", () => {
+test("West SW ATWP starts from S108 for every road in PG1 and PG2 without changing card associations", () => {
+  for (const handler of ["handleInsertionTick", "handlePg2InsertionTick"]) {
+    for (const road of ["WD-ST15", "WD-ST14", "WD-ST13", "WD-ST12"]) {
+      for (const input of ["SW ATWP", "sw atwp", "  sw   atwp  "]) {
+        const original = normal();
+        const api = createApi([original], "04:35");
+        api[handler](road, 1, "17", input, "ATWP");
+        const entry = api.state.current.find(item => item.key === `ins-${road}-1`);
+        const text = "04:35 hrs – T17 sweeping started from S108 to ATWP WD at 45 kph. Track confirmed clear at 04:37 hrs.";
+        assert.equal(entry.text, text);
+        assert.equal(entry.road, road);
+        assert.equal(entry.depot, "west");
+        assert.equal(entry.signal, "ATWP WD");
+        assert.equal(entry.sweepTrack, "ATWP");
+        assert.equal(entry.isSweeping, true);
+        assert.equal(entry.remark, "SW ATWP");
+        assert.equal(entry.tid, null);
+        const field = handler === "handleInsertionTick" ? "insertionLog" : "pg2InsertionLog";
+        assert.doesNotThrow(() => validateInsertionChanges({ [`${field}.${entry.key}`]: entry }));
+        assert.equal(api.buildSweepAnd3K1CopyText([entry], [], "West"), `Automatic Train Washing Plant Sweeping :\n${text}`);
+        assert.equal(JSON.parse(api.writes.stored).find(item => item.key === entry.key).road, road);
+        if (handler === "handlePg2InsertionTick") assert.equal(api.writes.live.pg2InsertionLog.find(item => item.key === entry.key).text, text);
+        assert.equal(api.state.current.find(item => item.key === original.key), original);
+        assert.equal(api.writes.timetableLookups || 0, 0);
+      }
+    }
+  }
+});
+
+test("ATWP without a valid depot card is rejected rather than using S108 as a saved stabling road", () => {
   const original = normal();
-  const api = createApi([original], "04:35");
-  api.handlePg2InsertionTick("WD-ST13", 1, "17", "sw atwp", "ATWP");
+  const api = createApi([original]);
+  api.handlePg2InsertionTick("S108", 1, "17", "SW ATWP", "ATWP");
   assert.equal(api.state.current.length, 1);
   assert.equal(api.state.current[0], original);
 });
 
-test("ATWP times, TA name and undo remain editable and retain the East destination", () => {
-  const api = createApi([], "23:59");
-  api.handlePg2InsertionTick("ED-ST02", 0, "21", "sw atwp");
-  const key = api.state.current[0].key;
-  assert.equal(api.state.current[0].clearTime, "00:01");
-  api.handlePg2SweepUpdate(key, { time: "04:35" });
-  assert.equal(api.state.current[0].clearTime, "04:37");
-  api.handlePg2SweepUpdate(key, { clearTime: "04:40" });
-  api.handlePg2InsertionTaNameUpdate(key, "Ali");
-  const entry = api.state.current[0];
-  assert.equal(entry.sweepTrack, "ATWP");
-  assert.equal(entry.signal, "ATWP ED");
-  assert.match(entry.text, /from ED-ST02 to ATWP ED at 45 kph\. Track confirmed clear at 04:40 hrs\. TA Ali onboard\.$/);
-  assert.match(api.buildSweepAnd3K1CopyText([entry], [], "East"), /^Automatic Train Washing Plant Sweeping :\n04:35/);
-  api.handlePg2InsertionTick("ED-ST02", 0, "21", entry.inputValue);
-  assert.equal(api.state.current.length, 0);
+test("ATWP times, TA name and undo remain editable with the correct origin in both depots", () => {
+  for (const [road, label, origin, destination] of [["ED-ST02", "East", "ED-ST02", "ATWP ED"], ["WD-ST13", "West", "S108", "ATWP WD"]]) {
+    const api = createApi([], "23:59");
+    api.handlePg2InsertionTick(road, 0, "21", "sw atwp");
+    const key = api.state.current[0].key;
+    assert.equal(api.state.current[0].clearTime, "00:01");
+    api.handlePg2SweepUpdate(key, { time: "04:35" });
+    assert.equal(api.state.current[0].clearTime, "04:37");
+    api.handlePg2SweepUpdate(key, { clearTime: "04:40" });
+    api.handlePg2InsertionTaNameUpdate(key, "Ali");
+    const entry = api.state.current[0];
+    assert.equal(entry.sweepTrack, "ATWP");
+    assert.equal(entry.signal, destination);
+    assert.ok(entry.text.endsWith(`from ${origin} to ${destination} at 45 kph. Track confirmed clear at 04:40 hrs. TA Ali onboard.`));
+    assert.equal(entry.road, road);
+    assert.match(api.buildSweepAnd3K1CopyText([entry], [], label), /^Automatic Train Washing Plant Sweeping :\n04:35/);
+    api.handlePg2InsertionTick(road, 0, "21", entry.inputValue);
+    assert.equal(api.state.current.length, 0);
+  }
 });
 
-test("East sweeping destination can switch between track and ATWP without stale signal or remark metadata", () => {
+test("both depots can switch between track and ATWP without stale signal, origin or remark metadata", () => {
   const api = createApi([], "04:35");
   api.handlePg2InsertionTick("ED-ST03", 0, "17", "SW");
   const key = api.state.current[0].key;
@@ -127,8 +162,15 @@ test("East sweeping destination can switch between track and ATWP without stale 
   assert.doesNotMatch(api.buildSweepAnd3K1CopyText(api.state.current, [], "East"), /Automatic Train Washing Plant/);
   const west = createApi([sweeping()]);
   west.handlePg2SweepUpdate(sweeping().key, { sweepTrack: "ATWP" });
-  assert.equal(west.state.current[0].signal, "S101");
-  assert.equal(west.state.current[0].sweepTrack, "TK1");
+  assert.equal(west.state.current[0].signal, "ATWP WD");
+  assert.equal(west.state.current[0].sweepTrack, "ATWP");
+  assert.match(west.state.current[0].text, /from S108 to ATWP WD/);
+  assert.equal(west.state.current[0].inputValue, "SW ATWP");
+  west.handlePg2SweepUpdate(sweeping().key, { sweepTrack: "TK2" });
+  assert.equal(west.state.current[0].signal, "S102");
+  assert.equal(west.state.current[0].inputValue, "SW2");
+  assert.match(west.state.current[0].text, /from WD-ST13 to signal S102/);
+  assert.doesNotMatch(west.buildSweepAnd3K1CopyText(west.state.current, [], "West"), /ATWP|S108/);
 });
 
 test("ordinary SW, SW1 and SW2 keep their original signals for both depots", () => {
@@ -155,14 +197,40 @@ test("mixed East special logs separate ordinary sweeping, ATWP sweeping and 3K1 
   assert.equal(text.split(atwp.text).length - 1, 1);
 });
 
-test("ATWP choice and shortcut help are exposed only in the East sweeping card", () => {
+test("ATWP choice is exposed in both depot cards without changing the ordinary track options", () => {
   const start = page.indexOf('{key && inserted?.isSweeping && (');
   const section = page.slice(start, page.indexOf('{key && (', start));
   const atwpIndex = section.indexOf('<option value="ATWP"');
   const westIndex = section.indexOf(') : (');
   assert.ok(atwpIndex >= 0 && atwpIndex < westIndex);
-  assert.equal(section.match(/<option value="ATWP"/g)?.length, 1);
+  assert.equal(section.match(/<option value="ATWP"/g)?.length, 2);
+  assert.ok(section.indexOf('>ATWP WD</option>') > westIndex);
+  assert.equal(section.match(/>Track 01<\/option>/g)?.length, 2);
+  assert.equal(section.match(/>Track 02<\/option>/g)?.length, 2);
   assert.match(page, /isManualInsertionActionRemark\(tidRemarkText, autoTidDepot\)/);
+});
+
+test("West ATWP display/copy normalizes a stored stabling origin without mutating saved records", () => {
+  const api = createApi([], "04:35");
+  api.handlePg2InsertionTick("WD-ST12", 0, "06", "SW ATWP");
+  const entry = api.state.current[0];
+  const legacy = { ...entry, sweepTrack: undefined, text: entry.text.replace("from S108 to ATWP WD", "from WD-ST12 to signal ATWP WD") };
+  const before = JSON.stringify(legacy);
+  assert.equal(api.buildSweepAnd3K1CopyText([legacy], [], "West"), "Automatic Train Washing Plant Sweeping :\n04:35 hrs – T06 sweeping started from S108 to ATWP WD at 45 kph. Track confirmed clear at 04:37 hrs.");
+  assert.equal(JSON.stringify(legacy), before);
+});
+
+test("West mixed output keeps ATWP separate from ordinary sweeping and 3K1", () => {
+  const api = createApi([], "04:35");
+  api.handlePg2InsertionTick("WD-ST12", 0, "06", "SW ATWP");
+  const atwp = api.state.current[0];
+  const ordinary = { ...sweeping(), text: "04:20 hrs – T03 sweeping started from WD-ST13 to signal S101 at 45 kph. Track confirmed clear at 04:22 hrs." };
+  const threeK1 = { ...normal(), trainKey: "T32", tid: null, remark: "3K1" };
+  const text = api.buildSweepAnd3K1CopyText([ordinary, atwp], [threeK1], "West");
+  assert.match(text, /^Sweeping train T03 from West Depot to S101:/);
+  assert.match(text, /\n\nAutomatic Train Washing Plant Sweeping :\n04:35 hrs – T06 sweeping started from S108 to ATWP WD/);
+  assert.match(text, /\n\nInsertion from West Depot for 3K1 Insertion:/);
+  assert.equal(text.split(atwp.text).length - 1, 1);
 });
 
 test("Insert without a Tracking ID records the current time in either depot and remains editable and undoable", () => {
