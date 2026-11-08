@@ -5902,7 +5902,7 @@ function getSweepTrackFromRemark(value) {
 
 function isSweepRemark(value, depot = "") {
   const key = (value || "").toString().trim().toUpperCase().replace(/\s+/g, " ");
-  return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING" || (depot === "east" && key === "SW ATWP");
+  return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING" || (["west", "east"].includes(depot) && key === "SW ATWP");
 }
 
 function isManualInsertionActionRemark(value, depot = "") {
@@ -5964,6 +5964,7 @@ function isWithinTIDSchedule(firstTidTime, lastTidTime) {
 function getSweepingSignal(road, sweepTrack) {
   const track = (sweepTrack || "").toString().trim().toUpperCase();
   if (EAST_ROADS.includes(road) && track === "ATWP") return "ATWP ED";
+  if (WEST_ROADS.includes(road) && track === "ATWP") return "ATWP WD";
   if (EAST_ROADS.includes(road)) return track === "TK2" ? "S2208" : "S2207";
   return track === "TK2" ? "S102" : "S101";
 }
@@ -5993,8 +5994,10 @@ function buildNormalInsertionEntryText(options = {}) {
 
 function buildSweepingInsertionEntryText(options = {}) {
   const { time = "", trainKey = "", road = "", signal = "", clearTime = "", taName = "" } = options;
-  const destination = signal === "ATWP ED" ? signal : `signal ${signal}`;
-  return `${time} hrs – ${trainKey} sweeping started from ${road} to ${destination} at 45 kph. Track confirmed clear at ${clearTime} hrs.${getInsertionTaSuffix(taName)}`;
+  const destination = ["ATWP ED", "ATWP WD"].includes(signal) ? signal : `signal ${signal}`;
+  // Keep the stabling road in the record for card lookup/undo, not as the West ATWP log origin.
+  const origin = signal === "ATWP WD" ? "S108" : road;
+  return `${time} hrs – ${trainKey} sweeping started from ${origin} to ${destination} at 45 kph. Track confirmed clear at ${clearTime} hrs.${getInsertionTaSuffix(taName)}`;
 }
 
 function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = "") {
@@ -6413,7 +6416,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }, [tidDropRequest, isTidDropEligible, onTidChange, onInsertionTick, road, bi, key, onTidDropApplied]);
 
   const handleInsertClick = () => {
-    // SW ATWP selects the washing plant in East Depot only.
+    // SW ATWP selects the washing plant for the card's depot.
     const sweepTrack = getSweepTrackFromRemark(tidRemarkText) || (isSweepRemark(tidRemarkText, autoTidDepot) ? "TK1" : "");
     setSuppressAutoInsert(false);
     onInsertionTick(road, bi, key, tidInput, sweepTrack);
@@ -6852,7 +6855,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 title="Sweep details"
                 aria-label="Sweep details"
               >
-                <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">Sweep</div>
+                <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">{inserted.sweepTrack === "ATWP" ? "SW ATWP" : "Sweep"}</div>
                 <div className="flex w-full flex-col gap-0.5">
                   <select
                     value={inserted.sweepTrack || "TK1"}
@@ -6865,6 +6868,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   >
                     <option value="TK1" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 01</option>
                     <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
+                    <option value="ATWP" style={{ backgroundColor: "#071828", color: "#ffffff" }}>ATWP WD</option>
                   </select>
 
                   <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
@@ -7533,7 +7537,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" />
         </svg>
-        <span>Tracking ID also accepts remarks: <strong>SW</strong>, <strong>3K1</strong>{sectionDepot === "east" && <>, <strong>SW ATWP</strong></>} or other text.</span>
+        <span>Tracking ID also accepts remarks: <strong>SW</strong>, <strong>3K1</strong>, <strong>SW ATWP</strong> or other text.</span>
       </p>
       <div
         className="theme-insertion-search-actions mb-2 flex items-center justify-end gap-2"
@@ -20128,8 +20132,8 @@ export default function DepotStablingPage() {
     const cellKey = `${road}-${bi}`;
     const logKey = `ins-${cellKey}`;
     const depot = WEST_ROADS.includes(road) ? "west" : "east";
-    // Do not interpret the East-only shortcut as a normal West insertion.
-    if (getSweepTrackFromRemark(remark) === "ATWP" && !EAST_ROADS.includes(road)) return prevLog || [];
+    // ATWP sweeping must remain associated with a valid depot stabling card.
+    if (getSweepTrackFromRemark(remark) === "ATWP" && !WEST_ROADS.includes(road) && !EAST_ROADS.includes(road)) return prevLog || [];
     const existing = (prevLog || []).find((l) => l.key === logKey);
     const existingMatchesCurrentTrain = existing && normalizeTrainId(existing.trainKey || "") === normalizeTrainId(trainKey || "");
     if (existingMatchesCurrentTrain) {
@@ -20155,11 +20159,11 @@ export default function DepotStablingPage() {
       : tidStr || "";
     const time = scheduledTime || formatTime(new Date());
 
-    // SW ATWP is an East-only destination; ordinary sweeping keeps Track 01/02.
+    // SW ATWP uses the depot's washing plant; ordinary sweeping keeps Track 01/02.
     if (isSweepRemark(normalizedRemark, depot)) {
       const remarkSweepTrack = getSweepTrackFromRemark(normalizedRemark);
       const requestedSweepTrack = (sweepTrack || remarkSweepTrack || "TK1").toString().trim().toUpperCase();
-      const normalizedSweepTrack = depot === "east" && requestedSweepTrack === "ATWP"
+      const normalizedSweepTrack = (WEST_ROADS.includes(road) || EAST_ROADS.includes(road)) && requestedSweepTrack === "ATWP"
         ? "ATWP"
         : ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
 
@@ -20353,7 +20357,7 @@ export default function DepotStablingPage() {
       if (!entry?.isSweeping || entry.key !== entryKey) return entry;
 
       const nextTrackRaw = (changes.sweepTrack ?? entry.sweepTrack ?? "TK1").toString().trim().toUpperCase();
-      const sweepTrack = EAST_ROADS.includes(entry.road) && nextTrackRaw === "ATWP"
+      const sweepTrack = (WEST_ROADS.includes(entry.road) || EAST_ROADS.includes(entry.road)) && nextTrackRaw === "ATWP"
         ? "ATWP"
         : ["TK1", "TK2"].includes(nextTrackRaw) ? nextTrackRaw : "TK1";
       const hasStartChange = Object.prototype.hasOwnProperty.call(changes, "time");

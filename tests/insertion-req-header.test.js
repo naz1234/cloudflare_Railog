@@ -49,7 +49,8 @@ test('desktop actions stay in the header while the remark note flows below varia
   assert.equal(value(note, 'overflow-wrap'), 'anywhere');
   assert.match(page, /className="insertion-tracking-remark-note" role="note"/);
   assert.match(page, /Tracking ID also accepts remarks: <strong>SW<\/strong>, <strong>3K1<\/strong>/);
-  assert.match(page, /sectionDepot === "east" && <>, <strong>SW ATWP<\/strong><\/>/);
+  assert.match(page, /<strong>3K1<\/strong>, <strong>SW ATWP<\/strong> or other text/);
+  assert.doesNotMatch(page, /sectionDepot === "east" && <>, <strong>SW ATWP/);
   assert.doesNotMatch(page, /className="theme-insertion-stabling-summary|insertionSummary\.(?:completed|tidAssigned)|insertionSummaryPending|insertionSummaryEmpty/);
 });
 

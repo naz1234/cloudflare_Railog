@@ -160,7 +160,7 @@ INS combines a stabling-based train view with the selected timetable, editable T
 
 - Manual text can include `3K1`, other notes, or sweeping keywords.
 - `SW` / `SW1` selects the Track 01 sweeping option; `SW2` selects Track 02. Track and times remain editable.
-- East Depot additionally supports `SW ATWP`, with the output destination `ATWP ED` rather than `signal ATWP ED`.
+- Both depots support `SW ATWP`. West output starts from **S108 to ATWP WD**, not from its stabling road; East output retains the selected stabling road and destination **ATWP ED**. Neither ATWP destination is prefixed with `signal`. The saved stabling association remains available for card lookup, editing and undo.
 - Review the sweeping start/end times and destination before using the output. These are entered/generated records, not a command to perform a movement.
 - Insertion Only and Sweep + 3K1 only are different output selections. The latter contains sweeping and 3K1 entries; 3K1 entries are excluded from Insertion Only.
 
