@@ -73,7 +73,7 @@ test('APU and APU ALARM use the UNFIT surface, but unrelated APU remarks do not'
 });
 
 test('requested technical-failure and APU mismatch spellings share the UNFIT visual surface', () => {
-  for (const label of ['CC Technical Failure', 'CC tehnical failure', 'CC TECHNICAL', 'CC TEHNICAL', 'Technical Failure', 'tehnical failure', 'CC-Technical / Failure in ML', 'APU Mismatch', 'APU Missmatch', 'APU_MISMATCH', 'APU MIS - RST CM', 'APU missmatch alarm']) {
+  for (const label of ['CC TECH', 'CC Technical Failure', 'CC tehnical failure', 'CC TECHNICAL', 'CC TEHNICAL', 'Technical Failure', 'tehnical failure', 'CC-Technical / Failure in ML', 'APU Mismatch', 'APU Missmatch', 'APU_MISMATCH', 'APU MIS - RST CM', 'APU missmatch alarm']) {
     for (const item of [label, { badgeText: label }, { displayType: label }, { typeKey: label }]) {
       assert.equal(getStablingRemarkTheme([item]), 'unfit', label);
     }
@@ -85,6 +85,15 @@ test('requested technical-failure and APU mismatch spellings share the UNFIT vis
   }
   for (const label of ['Technical', 'TECHNICAL INSPECTION', 'Failure', 'CC TEST', 'CC TECHNICALLY', 'TECHNICAL FAILURENESS', 'APU MISREAD', 'NOTAPU MISMATCH']) {
     assert.equal(getStablingRemarkTheme([label]), '', label);
+  }
+});
+
+test('short CC TECH is case/punctuation tolerant but never a partial-word match', () => {
+  for (const label of ['CC TECH', 'cc tech', ' CC   TECH ', 'CC-TECH', 'CC_TECH', 'CC TECH ALARM', 'CC TECH FAILURE']) {
+    assert.equal(getStablingRemarkTheme([{ badgeText: label }]), 'unfit', label);
+  }
+  for (const label of ['CC TECHNOLOGY', 'CC TECHNICIAN', 'CC TECHNICALLY', 'ACC TECH', 'TECH FAILURE']) {
+    assert.equal(getStablingRemarkTheme([{ badgeText: label }]), '', label);
   }
 });
 
@@ -120,7 +129,7 @@ test('UNFIT takes visual priority over least priority and deep clean without mod
 
 test('both actual REQ depot cards gain the theme class without recolouring or dropping remark pills', () => {
   for (const depot of ['west', 'east']) {
-    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['APU', 'unfit'], ['APU ALARM', 'unfit'], ['CC Technical Failure', 'unfit'], ['CC tehnical', 'unfit'], ['tehnical failure', 'unfit'], ['APU Missmatch', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['DEEP CLEAN', 'deep-clean']]) {
+    for (const [label, theme] of [['UNFIT by TSM', 'unfit'], ['APU', 'unfit'], ['APU ALARM', 'unfit'], ['CC TECH', 'unfit'], ['CC Technical Failure', 'unfit'], ['CC tehnical', 'unfit'], ['tehnical failure', 'unfit'], ['APU Missmatch', 'unfit'], ['FIT but LEAST PRIORITY', 'least-priority'], ['DEEP CLEAN', 'deep-clean']]) {
       const html = renderRow(depot, [{ badgeText: 'RST PM' }, { badgeText: label }]);
       assert.match(html, new RegExp(`class="theme-stabling-train-card[^"\\n]*has-remark-theme is-${theme}`));
       assert.match(html, new RegExp(`data-stabling-depot="${depot}"`));
@@ -136,7 +145,7 @@ test('both actual REQ depot cards gain the theme class without recolouring or dr
 });
 
 test('empty cards and hidden remarks do not receive an unrelated theme', () => {
-  for (const label of ['UNFIT', 'APU', 'APU ALARM', 'CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch', 'FIT but LEAST PRIORITY', 'Deep Clean']) {
+  for (const label of ['UNFIT', 'APU', 'APU ALARM', 'CC TECH', 'CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch', 'FIT but LEAST PRIORITY', 'Deep Clean']) {
     assert.doesNotMatch(renderRow('west', [{ badgeText: label }], { blocks: [{ trainId: '' }] }), /has-remark-theme/);
     assert.doesNotMatch(renderRow('west', [], { hiddenMaintenanceMap: { T45: [{ badgeText: label }] } }), /has-remark-theme/);
   }

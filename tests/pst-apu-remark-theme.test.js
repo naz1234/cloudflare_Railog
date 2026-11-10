@@ -61,7 +61,7 @@ test('both actual PST depot cards detect bare APU and APU ALARM across active re
 
 test('technical failure and APU mismatch warn in both PST depots from direct or REQ remarks', () => {
   for (const depot of ['west', 'east']) {
-    for (const label of ['CC Technical Failure', 'CC tehnical failure', 'CC TECHNICAL', 'CC TEHNICAL', 'Technical Failure', 'tehnical failure', 'APU Mismatch', 'APU Missmatch', 'APU_MISMATCH', 'APU MIS - RST CM', 'APU missmatch alarm']) {
+    for (const label of ['CC TECH', 'cc tech alarm', 'CC-TECH', 'CC Technical Failure', 'CC tehnical failure', 'CC TECHNICAL', 'CC TEHNICAL', 'Technical Failure', 'tehnical failure', 'APU Mismatch', 'APU Missmatch', 'APU_MISMATCH', 'APU MIS - RST CM', 'APU missmatch alarm']) {
       const hasReqApuRemark = getRequestApuTrainKeys([{ trainId: '05', requestType: 'Other', customType: label }]).has('T5');
       assert.equal(hasReqApuRemark, true, label);
       const plain = render(depot, []);
@@ -79,7 +79,7 @@ test('technical failure and APU mismatch warn in both PST depots from direct or 
 
 test('unrelated APU and technical text do not flag either PST depot from direct or REQ remarks', () => {
   for (const depot of ['west', 'east']) {
-    for (const label of ['APU TEST', 'APU no load', 'NOTAPU ALARM', 'APU ALARMING', 'APU MISREAD', 'Technical', 'TECHNICAL INSPECTION', 'Failure', 'CC TEST', 'CC TECHNICALLY', 'TECHNICAL FAILURENESS']) {
+    for (const label of ['APU TEST', 'APU no load', 'NOTAPU ALARM', 'APU ALARMING', 'APU MISREAD', 'Technical', 'TECHNICAL INSPECTION', 'Failure', 'CC TEST', 'CC TECHNICALLY', 'CC TECHNOLOGY', 'CC TECHNICIAN', 'ACC TECH', 'TECH FAILURE', 'TECHNICAL FAILURENESS']) {
       const hasReqApuRemark = getRequestApuTrainKeys([{ trainId: '05', requestType: 'Other', customType: label }]).has('T5');
       assert.equal(hasReqApuRemark, false, label);
       for (const field of ['badgeText', 'displayType', 'typeKey', 'remark']) {
@@ -117,10 +117,11 @@ test('REQ failure/APU detection uses active displayed remark titles and normaliz
     Object.freeze({ trainId: '11', requestType: 'CC Technical' }),
     Object.freeze({ trainId: '12', requestType: 'Other', customType: 'tehnical failure' }),
     Object.freeze({ trainId: '13', requestType: 'Other', groupTitle: 'CC tehnical failure' }),
+    Object.freeze({ trainId: '14', requestType: 'CC TECH' }),
     Object.freeze({ trainId: '', requestType: 'APU ALARM' }),
     null,
   ]);
-  assert.deepEqual([...getRequestApuTrainKeys(requests)], ['T1', 'T17', 'T9', 'T10', 'T11', 'T12', 'T13']);
+  assert.deepEqual([...getRequestApuTrainKeys(requests)], ['T1', 'T17', 'T9', 'T10', 'T11', 'T12', 'T13', 'T14']);
   for (const invalid of [undefined, null, {}, 'APU']) {
     assert.deepEqual([...getRequestApuTrainKeys(invalid)], []);
   }
@@ -214,7 +215,7 @@ test('mismatch remains a warning after a separate APU ALARM is removed', () => {
 
 test('new REQ warning remarks clear after hiding, deletion or a non-warning rename', () => {
   for (const depot of ['west', 'east']) {
-    for (const label of ['CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch']) {
+    for (const label of ['CC TECH', 'CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch']) {
       const active = { trainId: '05', requestType: 'Other', customType: label };
       for (const [requests, expected] of [[[active], true], [[{ ...active, groupHidden: true }], false], [[{ ...active, groupTitle: 'Wash' }], false], [[], false]]) {
         const hasReqApuRemark = getRequestApuTrainKeys(requests).has('T5');
@@ -239,7 +240,7 @@ test('failure/APU card surfaces preserve every PST/Prep work state, timing field
   for (const depot of ['west', 'east']) {
     const { road } = baseProps(depot);
     const key = `${road}-0`;
-    for (const label of ['APU alarm', 'CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch']) {
+    for (const label of ['APU alarm', 'CC TECH', 'CC Technical Failure', 'CC tehnical', 'tehnical failure', 'APU Missmatch']) {
       for (const [overrides, state] of [
         [{}, 'is-normal'],
         [{ pstState: { [key]: { trainKey: 'T5', confirming: true, startTime: '04:00', endTime: '04:06' } } }, 'is-pst-confirming'],
