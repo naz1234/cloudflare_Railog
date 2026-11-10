@@ -9,7 +9,7 @@ export function isFailureWarningRemark(label) {
   const normalized = String(label ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
   return isApuAlarmRemark(normalized)
     || /\bAPU (?:MIS|MISMATCH|MISSMATCH)\b/.test(normalized)
-    || /\b(?:CC (?:TECHNICAL|TEHNICAL)|(?:TECHNICAL|TEHNICAL) FAILURE)\b/.test(normalized);
+    || /\b(?:CC (?:TECHNICAL|TEHNICAL|TECH)|(?:TECHNICAL|TEHNICAL) FAILURE)\b/.test(normalized);
 }
 
 export function getStablingRemarkTheme(items = []) {

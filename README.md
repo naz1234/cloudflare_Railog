@@ -345,7 +345,7 @@ Dark-mode card surfaces help distinguish requested conditions without changing t
 | Muted teal Tracking ID input | INS | Quiet Tracking ID entry styling, separate from maintenance tags. |
 | Muted amber 3K1 pill | INS | The two-line 3K1/time remark, distinct from normal Tracking ID styling. |
 
-The shared failure/APU matcher recognizes bare `APU`, `APU ALARM`, `APU Mismatch`, `APU Missmatch`, existing `APU MIS` shorthand, `CC Technical Failure`, `CC Technical` and `Technical Failure`. The `Tehnical` spelling is supported too; matching normalizes case, punctuation and spacing. Unrelated text such as APU TEST is not made a warning just because it contains APU.
+The shared failure/APU matcher recognizes bare `APU`, `APU ALARM`, `APU Mismatch`, `APU Missmatch`, existing `APU MIS` shorthand, `CC Technical Failure`, `CC Technical`, the short form `CC TECH`, and `Technical Failure`. The `Tehnical` spelling is supported too; matching normalizes case, punctuation and spacing. Unrelated text such as APU TEST is not made a warning just because it contains APU.
 
 These card colours are visual cues only: they do not change train fitness, PST/Prep completion, checker selections or recorded times. Light-mode styling is separate. The shared matching rules are in [`src/lib/reqStablingRemarkTheme.js`](src/lib/reqStablingRemarkTheme.js).
 
