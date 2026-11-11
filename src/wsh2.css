@@ -93,6 +93,10 @@ html[data-app-theme="light"] .wsh2-batch-error { color: #a32037; }
 .wsh2-empty-tick { width: 13px; height: 13px; border: 1px solid var(--wsh-muted); border-radius: 3px; }
 .wsh2-tick.is-done { color: var(--wsh-good); border-color: color-mix(in srgb, var(--wsh-good), transparent 55%); background: color-mix(in srgb, var(--wsh-good) 9%, var(--wsh-surface)); }
 .wsh2-paper-footer { margin-top: 20px; font-size: 11px; color: var(--wsh-muted); }
+.wsh2-pending-wash { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--wsh-line); border-radius: 6px; background: var(--wsh-surface); color: var(--wsh-text); font-size: 12px; line-height: 1.5; }
+.wsh2-pending-wash > strong { color: var(--wsh-accent); }
+.wsh2-pending-wash > span { min-width: 0; overflow-wrap: anywhere; }
+.wsh2-pending-wash.is-complete { color: var(--wsh-good); }
 .wsh2-print-dialog { box-sizing: border-box; width: min(560px, calc(100% - 28px)); max-height: calc(100dvh - 36px); overflow-y: auto; margin: auto; padding: 20px; border: 1px solid var(--wsh-line); border-radius: 16px; background: var(--wsh-bg); color: var(--wsh-text); box-shadow: 0 22px 70px #0006; }
 .wsh2-print-dialog::backdrop { background: #020d18b8; }
 .wsh2-print-dialog > form { display: flex; flex-direction: column; gap: 14px; }
