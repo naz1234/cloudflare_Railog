@@ -105,6 +105,7 @@ function Preview() {
   const [revision, setRevision] = useState(0);
   const [requests, setRequests] = useState(sampleRequests);
   const [stabling, setStabling] = useState(createStablingSamples);
+  const [reqTrainSearch, setReqTrainSearch] = useState("");
   const [removalState, setRemovalState] = useState(initialRemovalState);
   const cellRefs = useRef({});
   const workspaceRef = useRef(null);
@@ -177,7 +178,7 @@ function Preview() {
       <p>Stabling, Maintenance, Removal Summary and the four log/export panels — using the same components as the live page.</p>
       <div className="slate-preview-actions">
         <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? "Try light mode" : "Try dark mode"}</button>
-        <button onClick={() => { setRemovalState(seed()); setRequests(sampleRequests()); setStabling(createStablingSamples()); setRevision((value) => value + 1); }}>Reset samples</button>
+        <button onClick={() => { setRemovalState(seed()); setRequests(sampleRequests()); setStabling(createStablingSamples()); setReqTrainSearch(""); setRevision((value) => value + 1); }}>Reset samples</button>
       </div>
       <p className="slate-preview-disclaimer">Sample trains only. Edits and sync stay in this preview; production is unchanged. Scroll sideways to see the side panels.</p>
       <nav className="slate-preview-jump-links" aria-label="Preview panel shortcuts">
@@ -192,6 +193,8 @@ function Preview() {
         {...config}
         activeTimetableType="weekday"
         title={`${config.depotLabel.toUpperCase()} STABLING`}
+        trainSearch={reqTrainSearch}
+        onTrainSearchChange={setReqTrainSearch}
         duplicates={duplicates}
         maintenanceMap={requestMaps.visible}
         hiddenMaintenanceMap={requestMaps.hidden}

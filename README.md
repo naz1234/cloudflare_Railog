@@ -72,7 +72,7 @@ REQ is the main place to review the relationship between requests, depot stablin
 - West Depot uses roads WD-ST15, WD-ST14, WD-ST13 and WD-ST12; blocks are displayed from 7 to 1.
 - East Depot uses ED-ST02 and ED-ST03; blocks are displayed from 1 to 7.
 - Occupied blocks show the Train ID and its displayed remarks. Empty blocks remain visible so the physical arrangement can be read without collapsing the grid.
-- Train search highlights matching cards across depots and reports matching locations. A search does not move a train or change its records.
+- In REQ, PST and INS, search one or several trains using `01 02 03` or `01, 02, 03` (T-prefixed IDs also work). Each workspace shares its search between West and East, highlights all matching cards and reports each location plus any trains not found. Other trains stay visible; search does not move trains, edit records or change completion states. Clear or Escape resets the search.
 - Copy Stabling and supported image/PDF exports prepare the displayed information for review and reuse.
 
 **Maintenance requests**

@@ -58,5 +58,5 @@ test("slate styling is scoped away from the operational grids and insertion or P
   assert.match(css, /--stabling-panel: #edf2f7;/);
   assert.match(section, /<RoadRow[\s\S]*blockIndices=\{blockIndices\}/);
   assert.match(section, /onUpdate=\{\(bi, val\) => onUpdate\(road, bi, val\)\}/);
-  assert.match(section, /allDepots\.forEach/);
+  assert.match(section, /findStablingTrainLocations\(trainKeys, allDepots\)/);
 });

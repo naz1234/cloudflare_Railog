@@ -9,6 +9,7 @@ const eastData = { 'ED-ST02': ['05', '06', '07', '', '', '', ''].map(trainId => 
 function Preview() {
   const [theme, setTheme] = useState('dark');
   const [dirty, setDirty] = useState({west: true, east: true});
+  const [trainSearch, setTrainSearch] = useState('');
   useEffect(() => {
     document.documentElement.dataset.appTheme = theme;
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -24,6 +25,11 @@ function Preview() {
         const isWest = depot === 'west';
         const indices = isWest ? [6,5,4,3,2,1,0] : [0,1,2,3,4,5,6];
         return <InsertionStablingSection key={depot} title={isWest ? 'West Depot stabling' : 'East Depot stabling'}
+          trainSearch={trainSearch} onTrainSearchChange={setTrainSearch}
+          allDepots={[
+            {depotLabel:'West Depot',roads:['WD-ST15'],data:westData,blockIndices:[6,5,4,3,2,1,0],blockLabels:[7,6,5,4,3,2,1].map(value=>`BLOCK ${value}`)},
+            {depotLabel:'East Depot',roads:['ED-ST02'],data:eastData,blockIndices:[0,1,2,3,4,5,6],blockLabels:[1,2,3,4,5,6,7].map(value=>`BLOCK ${value}`)},
+          ]}
           roads={[isWest ? 'WD-ST15' : 'ED-ST02']} data={isWest ? westData : eastData}
           blockIndices={indices} blockLabels={indices.map(index => `BLOCK ${index+1}`)} labelSide={isWest ? 'left' : 'right'}
           maintenanceMap={{}} insertionLog={[]} tidInputs={{}} onTidChange={noop}
