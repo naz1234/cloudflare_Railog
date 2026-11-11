@@ -88,6 +88,7 @@ import "../trainRemHdw40.css";
 import "../stablingSlate.css";
 import "../reqRemarkThemes.css";
 import { getStablingRemarkTheme, isFailureWarningRemark } from "../lib/reqStablingRemarkTheme";
+import { findStablingTrainLocations, parseStablingTrainSearch } from "../lib/stablingTrainSearch";
 import "../movementLogSlate.css";
 import "../tp1MovementReqSlate.css";
 import "../copyFeedbackSlate.css";
@@ -5258,9 +5259,13 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
 
 function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, reqApuTrainKeys = null, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearStablingTrains, stablingEditable = true, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
-  const normalizedSearch = normalizeTrainId(trainSearch);
+  const { trainKeys, invalidTokens } = useMemo(() => parseStablingTrainSearch(trainSearch), [trainSearch]);
+  const searchTrainKeys = useMemo(() => new Set(trainKeys), [trainKeys]);
+  const foundTrainKeys = new Set(trainSearchResults.map((result) => result.trainKey));
+  const missingTrainKeys = trainKeys.filter((key) => !foundTrainKeys.has(key));
+  const searched = trainSearch.trim().length > 0;
   const searchFound = trainSearchResults.length > 0;
-  const searchNotFound = Boolean(normalizedSearch && !searchFound);
+  const searchNotFound = searched && !searchFound;
   const hasClearControls = Boolean(onClearPST || onClearPrep || onClearStablingTrains);
   const pstClearCount = roads.reduce((count, road) => {
     return count + blockIndices.filter((bi) => {
@@ -5422,8 +5427,12 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
             type="text"
             value={trainSearch}
             onChange={(event) => onTrainSearchChange?.(event.target.value)}
-            placeholder="Search train ID…"
-            aria-label={`${sectionDepotLabel} PST / Train Prep: search train ID across both depots`}
+            onKeyDown={(event) => { if (event.key === "Escape") onTrainSearchChange?.(""); }}
+            placeholder="Search trains, e.g. 01 02 03"
+            aria-label={`${sectionDepotLabel} PST / Train Prep: search train numbers across both depots`}
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={512}
             className="theme-stabling-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
             style={{
               color: searchFound ? "#fde68a" : searchNotFound ? "#fca5a5" : trainSearch ? "#e2eaf4" : undefined,
@@ -5444,20 +5453,22 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
             </button>
           )}
         </div>
-        {normalizedSearch && (
+        {searched && (
           <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
-            {searchFound ? trainSearchResults.map((location) => (
-              <div key={location} className="theme-stabling-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
-                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{normalizedSearch}</span>
+            {trainSearchResults.map(({ trainKey, location }) => (
+              <div key={`${trainKey}-${location}`} className="theme-stabling-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{trainKey.slice(1).padStart(2, "0")}</span>
                 <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>is at</span>
                 <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{location}</span>
               </div>
-            )) : (
+            ))}
+            {missingTrainKeys.length > 0 && (
               <div className="theme-stabling-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
                 <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{normalizedSearch} not found in either PST / Train Prep depot</span>
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{missingTrainKeys.map((key) => key.slice(1).padStart(2, "0")).join(", ")} not found in either PST / Train Prep depot</span>
               </div>
             )}
+            {(invalidTokens.length > 0 || !trainKeys.length) && <span className="theme-stabling-search-result is-not-found text-[11px] font-bold" style={{ color: "#f87171" }}>Use train numbers 01–47, separated by spaces or commas.</span>}
           </div>
         )}
       </div>
@@ -5487,7 +5498,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} gridRowIndex={ri} gridColumnIndex={i} maintenanceMap={maintenanceMap} hasReqApuRemark={Boolean(reqApuTrainKeys?.has(normalizeTrainId(data[road]?.[bi]?.trainId || "")))} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} gridRowIndex={ri} gridColumnIndex={i} maintenanceMap={maintenanceMap} hasReqApuRemark={Boolean(reqApuTrainKeys?.has(normalizeTrainId(data[road]?.[bi]?.trainId || "")))} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={searchTrainKeys.has(normalizeTrainId(data[road]?.[bi]?.trainId || ""))} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -7266,35 +7277,22 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, saveStatus = null, onRetrySave, isRefreshing = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, saveStatus = null, onRetrySave, isRefreshing = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [], trainSearch, onTrainSearchChange }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
-  const [sectionSearch, setSectionSearch] = useState("");
-  const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
-  const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
+  const [localSearch, setLocalSearch] = useState("");
+  const sectionSearch = trainSearch ?? localSearch;
+  const setSectionSearch = onTrainSearchChange ?? setLocalSearch;
+  const { trainKeys, invalidTokens } = useMemo(() => parseStablingTrainSearch(sectionSearch), [sectionSearch]);
+  const searchTrainKeys = useMemo(() => new Set(trainKeys), [trainKeys]);
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
   const depotCode = sectionDepot === "west" ? "WD" : "ED";
   const tooltipPlacement = sectionDepot === "west" ? "bottom" : "top";
 
-  const locationResults = (() => {
-    if (!normalizedSearch || allDepots.length === 0) return [];
-    const results = [];
-
-    allDepots.forEach(({ depotLabel, roads: depotRoads, data: depotData, blockLabels: depotBlockLabels, blockIndices: depotBlockIndices }) => {
-      depotRoads.forEach((road) => {
-        const blocks = depotData[road] || [];
-        depotBlockIndices.forEach((bi, visualIndex) => {
-          const trainKey = normalizeTrainId(blocks[bi]?.trainId || "");
-          if (trainKey && trainKey === normalizedSearch) {
-            results.push({ depotLabel, road, blockLabel: depotBlockLabels[visualIndex] });
-          }
-        });
-      });
-    });
-
-    return results;
-  })();
-  const searched = normalizedSearch.length > 0;
+  const locationResults = findStablingTrainLocations(trainKeys, allDepots);
+  const foundTrainKeys = new Set(locationResults.map((result) => result.trainKey));
+  const missingTrainKeys = trainKeys.filter((key) => !foundTrainKeys.has(key));
+  const searched = sectionSearch.trim().length > 0;
   const found = locationResults.length > 0;
   const notFound = searched && !found;
 
@@ -7628,8 +7626,12 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
             type="text"
             value={sectionSearch}
             onChange={(event) => setSectionSearch(event.target.value)}
-            placeholder="Search train ID across both insertion depots…"
-            aria-label="Search train ID across both insertion depots"
+            onKeyDown={(event) => { if (event.key === "Escape") setSectionSearch(""); }}
+            placeholder="Search trains, e.g. 01 02 03"
+            aria-label="Search train numbers across both insertion depots"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={512}
             className="theme-stabling-search-input theme-insertion-search-input flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
             style={{
               color: found ? "#fde68a" : notFound ? "#fca5a5" : sectionSearch ? "#e2eaf4" : undefined,
@@ -7653,12 +7655,12 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
 
         {searched && (
           <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
-            {found ? locationResults.map((result, index) => (
+            {locationResults.map((result, index) => (
               <div key={`${result.depotLabel}-${result.road}-${result.blockLabel}-${index}`} className="theme-stabling-search-result theme-insertion-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{normalizedSearch}</span>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{result.trainKey.slice(1).padStart(2, "0")}</span>
                 <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>is at</span>
                 <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{result.depotLabel}</span>
                 <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
@@ -7666,12 +7668,14 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                 <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
                 <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{result.blockLabel}</span>
               </div>
-            )) : (
+            ))}
+            {missingTrainKeys.length > 0 && (
               <div className="theme-stabling-search-result theme-insertion-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
                 <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{normalizedSearch} not found in either insertion depot</span>
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{missingTrainKeys.map((key) => key.slice(1).padStart(2, "0")).join(", ")} not found in either insertion depot</span>
               </div>
             )}
+            {(invalidTokens.length > 0 || !trainKeys.length) && <span className="theme-stabling-search-result is-not-found text-[11px] font-bold" style={{ color: "#f87171" }}>Use train numbers 01–47, separated by spaces or commas.</span>}
           </div>
         )}
       </div>
@@ -7770,7 +7774,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} hiddenMaintenanceMap={hiddenMaintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} hiddenMaintenanceMap={hiddenMaintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={searchTrainKeys.has(normalizeTrainId(block?.trainId || ""))} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -10196,6 +10200,7 @@ function InsertionTabContent({
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
   const [tidDragHover, setTidDragHover] = useState(null);
   const [tidDropRequest, setTidDropRequest] = useState(null);
+  const [trainSearch, setTrainSearch] = useState("");
   const tidDropSequenceRef = useRef(0);
 
   const resolveTidDropTarget = useCallback((clientX, clientY) => {
@@ -10460,6 +10465,8 @@ function InsertionTabContent({
           <div className="min-w-0 space-y-3">
             <InsertionStablingSection
               title="WEST DEPOT"
+              trainSearch={trainSearch}
+              onTrainSearchChange={setTrainSearch}
               blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]}
               blockIndices={[6,5,4,3,2,1,0]}
               roads={WEST_ROADS}
@@ -10516,6 +10523,8 @@ function InsertionTabContent({
           <div className="min-w-0 space-y-3">
             <InsertionStablingSection
               title="EAST DEPOT"
+              trainSearch={trainSearch}
+              onTrainSearchChange={setTrainSearch}
               blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]}
               blockIndices={[0,1,2,3,4,5,6]}
               roads={EAST_ROADS}
@@ -15200,11 +15209,11 @@ function APUMismatchChecklist({
 function PSTTabContent
 ({ westData, eastData, maintenanceMap, reqApuTrainKeys, pstRequests, onAddPSTRequest, onRemovePSTRequest, onClearPSTRequests, onRenamePSTRequestGroup, onDeletePSTRequestGroup, onTogglePSTRequestGroupHidden, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
   const [trainSearch, setTrainSearch] = useState("");
-  const trainSearchKey = normalizeTrainId(trainSearch);
-  const trainSearchLocations = trainSearchKey ? getMainStablingLocations(westData, eastData) : {};
-  const trainSearchResults = Array.isArray(trainSearchLocations[trainSearchKey])
-    ? trainSearchLocations[trainSearchKey]
-    : [];
+  const trainSearchKeys = parseStablingTrainSearch(trainSearch).trainKeys;
+  const trainSearchLocations = trainSearchKeys.length ? getMainStablingLocations(westData, eastData) : {};
+  const trainSearchResults = trainSearchKeys.flatMap((trainKey) => Array.isArray(trainSearchLocations[trainKey])
+    ? trainSearchLocations[trainKey].map((location) => ({ trainKey, location }))
+    : []);
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const [copyingExcelDepot, setCopyingExcelDepot] = useState("");
   const [copiedExcelDepot, setCopiedExcelDepot] = useState("");
@@ -17908,6 +17917,7 @@ export default function DepotStablingPage() {
   const [mobileReqLogSection, setMobileReqLogSection] = useState("removal");
   const [mobileReqDepot, setMobileReqDepot] = useState("west");
   const [mobileReqToolsOpen, setMobileReqToolsOpen] = useState(false);
+  const [reqTrainSearch, setReqTrainSearch] = useState("");
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
   const [requests, setRequests] = useState([]);
@@ -22520,6 +22530,8 @@ export default function DepotStablingPage() {
       <StablingSection
         depot="west"
         title="WEST DEPOT STABLING"
+        trainSearch={reqTrainSearch}
+        onTrainSearchChange={setReqTrainSearch}
         blockLabels={["BLOCK 7", "BLOCK 6", "BLOCK 5", "BLOCK 4", "BLOCK 3", "BLOCK 2", "BLOCK 1"]}
         blockIndices={[6, 5, 4, 3, 2, 1, 0]}
         roads={WEST_ROADS}
@@ -22544,6 +22556,8 @@ export default function DepotStablingPage() {
       <StablingSection
         depot="east"
         title="EAST DEPOT STABLING"
+        trainSearch={reqTrainSearch}
+        onTrainSearchChange={setReqTrainSearch}
         blockLabels={["BLOCK 1", "BLOCK 2", "BLOCK 3", "BLOCK 4", "BLOCK 5", "BLOCK 6", "BLOCK 7"]}
         blockIndices={[0, 1, 2, 3, 4, 5, 6]}
         roads={EAST_ROADS}
@@ -28480,16 +28494,20 @@ function StablingSection({
   onEditEnd,
   onClearAll,
   allDepots = [],
+  trainSearch,
+  onTrainSearchChange,
 }) {
-  const [sectionSearch, setSectionSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+  const sectionSearch = trainSearch ?? localSearch;
+  const setSectionSearch = onTrainSearchChange ?? setLocalSearch;
   const [mobileRoad, setMobileRoad] = useState(roads[0]);
-  const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
-  const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
+  const { trainKeys, invalidTokens } = useMemo(() => parseStablingTrainSearch(sectionSearch), [sectionSearch]);
+  const searchTrainKeys = useMemo(() => new Set(trainKeys), [trainKeys]);
   useEffect(() => {
-    if (!normalizedSearch) return;
-    const matchingRoad = roads.find((road) => (data[road] || []).some((block) => normalizeTrainId(block?.trainId || "") === normalizedSearch));
+    if (!searchTrainKeys.size) return;
+    const matchingRoad = roads.find((road) => (data[road] || []).some((block) => searchTrainKeys.has(normalizeTrainId(block?.trainId || ""))));
     if (matchingRoad) setMobileRoad(matchingRoad);
-  }, [normalizedSearch, data, roads]);
+  }, [searchTrainKeys, data, roads]);
   const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
   const copiedStabling = copyStatuses.default === "copied";
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -28555,26 +28573,11 @@ function StablingSection({
     await copyWithFeedback(stablingCopyText);
   };
 
-  // ── Cross-depot location lookup ────────────────────────────────────────────
-  const locationResults = (() => {
-    if (!normalizedSearch || allDepots.length === 0) return [];
-    const results = [];
-    allDepots.forEach(({ depotLabel, roads: dRoads, data: dData, blockLabels: dBlockLabels, blockIndices: dBlockIndices }) => {
-      dRoads.forEach((road) => {
-        const blocks = dData[road] || [];
-        dBlockIndices.forEach((bi, vi) => {
-          const val = blocks[bi]?.trainId || "";
-          const key = normalizeTrainId(val);
-          if (key && key === normalizedSearch) {
-            results.push({ depotLabel, road, blockLabel: dBlockLabels[vi] });
-          }
-        });
-      });
-    });
-    return results;
-  })();
-
-  const searched = normalizedSearch.length > 0;
+  // Share the REQ query across both depot panels without filtering any rows.
+  const locationResults = findStablingTrainLocations(trainKeys, allDepots);
+  const foundTrainKeys = new Set(locationResults.map((result) => result.trainKey));
+  const missingTrainKeys = trainKeys.filter((key) => !foundTrainKeys.has(key));
+  const searched = sectionSearch.trim().length > 0;
   const found = locationResults.length > 0;
   const notFound = searched && !found;
 
@@ -28651,7 +28654,12 @@ function StablingSection({
             type="text"
             value={sectionSearch}
             onChange={(e) => setSectionSearch(e.target.value)}
-            placeholder="Search train ID across both depots…"
+            onKeyDown={(event) => { if (event.key === "Escape") setSectionSearch(""); }}
+            aria-label={`${depotLabel} search train numbers across both depots`}
+            placeholder="Search trains across both depots, e.g. 01 02 03"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={512}
             className="theme-stabling-search-input flex-1 bg-transparent outline-none text-sm font-semibold placeholder:font-normal"
             style={{
               color: found ? "#fde68a" : notFound ? "#fca5a5" : sectionSearch ? "#e2eaf4" : undefined,
@@ -28661,6 +28669,8 @@ function StablingSection({
           />
           {sectionSearch && (
             <button
+              type="button"
+              aria-label="Clear train search"
               onClick={() => setSectionSearch("")}
               className="theme-stabling-search-clear flex items-center justify-center rounded-full w-4 h-4 transition-all hover:bg-[#1a3a56]"
               style={{ color: "#4a8ab5" }}
@@ -28672,14 +28682,14 @@ function StablingSection({
 
         {/* Location result pills */}
         {searched && (
-          <div className="flex flex-wrap items-center gap-2 mt-2 min-h-[22px]">
-            {found ? locationResults.map((r, idx) => (
+          <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-2 mt-2 min-h-[22px]">
+            {locationResults.map((r, idx) => (
               <div key={idx} className="theme-stabling-search-result is-found flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
                 {/* pin icon */}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{normalizedSearch}</span>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{r.trainKey.slice(1).padStart(2, "0")}</span>
                 <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>is at</span>
                 <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{r.depotLabel}</span>
                 <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
@@ -28687,14 +28697,16 @@ function StablingSection({
                 <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
                 <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{r.blockLabel}</span>
               </div>
-            )) : (
+            ))}
+            {missingTrainKeys.length > 0 && (
               <div className="theme-stabling-search-result is-not-found flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
                 </svg>
-                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{normalizedSearch} not found in either depot</span>
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{missingTrainKeys.map((key) => key.slice(1).padStart(2, "0")).join(", ")} not found in either depot</span>
               </div>
             )}
+            {(invalidTokens.length > 0 || !trainKeys.length) && <span className="theme-stabling-search-result is-not-found text-[11px] font-bold" style={{ color: "#f87171" }}>Use train numbers 01–47, separated by spaces or commas.</span>}
           </div>
         )}
       </div>
@@ -28765,7 +28777,7 @@ function StablingSection({
                 onEditEnd={onEditEnd}
                 isFirst={ri === 0}
                 isLast={ri === roads.length - 1}
-                searchHighlight={normalizedSearch}
+                searchHighlight={searchTrainKeys}
                 mobileActive={mobileRoad === road}
               />
             ))}
@@ -28894,7 +28906,7 @@ function RoadRow({
         const isDup = key && duplicates.has(key);
         const cellFlashKey = `${depot}-${label}-${bi}`;
         const isFlashing = flashingCells && flashingCells.has(cellFlashKey);
-        const isSearchMatch = searchHighlight && key && key === searchHighlight;
+        const isSearchMatch = Boolean(key && (searchHighlight instanceof Set ? searchHighlight.has(key) : key === searchHighlight));
 
         const isFirstBlock = i === 0;
         const isLastBlock = i === blockIndices.length - 1;

@@ -4,6 +4,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
+import { parseStablingTrainSearch } from "../src/lib/stablingTrainSearch.js";
 
 const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/pstCompletionColors.css", import.meta.url), "utf8");
@@ -22,13 +23,17 @@ const tabStart = source.search(/function PSTTabContent\r?\n/);
 const tabEnd = source.indexOf("\nfunction ", tabStart + 1);
 assert.ok(tabStart >= 0 && tabEnd > tabStart);
 const tab = source.slice(tabStart, tabEnd);
-const searchStart = tab.indexOf("  const trainSearchKey =");
+const searchStart = tab.indexOf("  const trainSearchKeys =");
 const searchEnd = tab.indexOf("  const [downloadingExcelDepot", searchStart);
 assert.ok(searchStart >= 0 && searchEnd > searchStart);
 const searchSource = tab.slice(searchStart, searchEnd);
 const helpers = ["normalizeTrainId", "formatStablingRoadForPopup", "getMainStablingLocations"]
   .map(functionSource).join("\n");
-const search = new Function("trainSearch", "westData", "eastData", "logLines", `${helpers}\n${searchSource}\nreturn { trainSearchKey, trainSearchResults };`);
+const lookup = new Function("parseStablingTrainSearch", `return (trainSearch, westData, eastData, logLines = []) => { ${helpers}\n${searchSource}\nreturn { trainSearchKeys, trainSearchResults }; };`)(parseStablingTrainSearch);
+const search = (...args) => {
+  const result = lookup(...args);
+  return { trainSearchKey: result.trainSearchKeys[0] || "", trainSearchResults: result.trainSearchResults.map(item => item.location) };
+};
 
 test("both PST depot panels share one search value, results, and clear handler", () => {
   assert.equal((tab.match(/const \[trainSearch, setTrainSearch\] = useState\(""\)/g) || []).length, 1);
@@ -82,10 +87,10 @@ test("empty PST queries are idle and missing IDs do not match empty blocks or ob
   }
   for (const query of ["T99", "constructor", "__proto__"]) {
     const result = search(query, { "WD-ST1": [null, { trainId: "" }] }, {});
-    assert.ok(result.trainSearchKey);
+    assert.equal(result.trainSearchKey, "");
     assert.deepEqual(result.trainSearchResults, []);
   }
-  assert.match(section, /const searchNotFound = Boolean\(normalizedSearch && !searchFound\)/);
+  assert.match(section, /const searchNotFound = searched && !searchFound/);
 });
 
 test("PST log-only trains do not appear as current train locations", () => {
@@ -95,11 +100,11 @@ test("PST log-only trains do not appear as current train locations", () => {
 });
 
 test("PST search is above the grid with an accessible label, clear button, and result status", () => {
-  assert.match(section, /placeholder="Search train ID…"/);
-  assert.match(section, /aria-label=\{`\$\{sectionDepotLabel\} PST \/ Train Prep: search train ID across both depots`\}/);
+  assert.match(section, /placeholder="Search trains, e.g. 01 02 03"/);
+  assert.match(section, /aria-label=\{`\$\{sectionDepotLabel\} PST \/ Train Prep: search train numbers across both depots`\}/);
   assert.match(section, /aria-label=\{`Clear \$\{sectionDepotLabel\} PST \/ Train Prep train search`\}/);
   assert.match(section, /role="status" aria-live="polite"/);
-  assert.match(section, /trainSearchResults\.map\(\(location\)/);
+  assert.match(section, /trainSearchResults\.map\(\(\{ trainKey, location \}\)/);
   assert.match(section, />\{location\}<\/span>/);
   assert.match(section, /not found in either PST \/ Train Prep depot/);
   assert.ok(section.indexOf("theme-pst-search") < section.indexOf("<table"));
@@ -108,7 +113,7 @@ test("PST search is above the grid with an accessible label, clear button, and r
 test("PST card highlights use normalized IDs and clear when the search is empty", () => {
   const expression = section.match(/isSearchMatch=\{([^\n]+?)\} \/>/)?.[1];
   assert.ok(expression);
-  const isMatch = new Function("query", "data", "road", "bi", `${functionSource("normalizeTrainId")}\nconst normalizedSearch = normalizeTrainId(query);\nreturn ${expression};`);
+  const isMatch = new Function("parseStablingTrainSearch", `return (query, data, road, bi) => { ${functionSource("normalizeTrainId")}\nconst searchTrainKeys = new Set(parseStablingTrainSearch(query).trainKeys);\nreturn ${expression}; };`)(parseStablingTrainSearch);
   const data = { "WD-ST1": [{ trainId: "T003" }, { trainId: "T04" }, null] };
   assert.equal(isMatch(" 3 ", data, "WD-ST1", 0), true);
   assert.equal(isMatch("T3", data, "WD-ST1", 1), false);
@@ -129,7 +134,7 @@ test("PST search rings work in both themes without replacing completion-state co
 
 // Render the actual section and cards, stubbing only the unchanged header controls/icons.
 const renderSource = ts.transpileModule([
-  "const { useState, useCallback } = React;",
+  "const { useState, useCallback, useMemo } = React;",
   helpers,
   ...["normalizeInsertionPg", "normalizePSTPg", "padTrainId", "formatTrainNumberOnly"].map(functionSource),
   cell,
@@ -139,8 +144,8 @@ const renderSource = ts.transpileModule([
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const EmptyControl = () => null;
-const Section = new Function("React", "Search", "X", "InsertionEditableHeaderControls", "RemovalSummaryTooltip", renderSource)(
-  React, EmptyControl, EmptyControl, EmptyControl, EmptyControl,
+const Section = new Function("React", "Search", "X", "InsertionEditableHeaderControls", "RemovalSummaryTooltip", "parseStablingTrainSearch", renderSource)(
+  React, EmptyControl, EmptyControl, EmptyControl, EmptyControl, parseStablingTrainSearch,
 );
 
 function renderSection(query, overrides = {}) {
@@ -152,7 +157,7 @@ function renderSection(query, overrides = {}) {
     roads: ["WD-ST1"], data, labelSide: "left",
     maintenanceMap: {}, pstState: {}, prepState: {}, taNameState: {},
     trainSearch: query,
-    trainSearchResults: search(query, data, {}).trainSearchResults,
+    trainSearchResults: lookup(query, data, {}).trainSearchResults,
     ...overrides,
   }));
 }
@@ -192,8 +197,8 @@ test("rendered PST search highlights only the matching card and preserves every 
 test("rendered PST empty and not-found searches have no highlighted cards", () => {
   const idle = renderSection("");
   assert.doesNotMatch(idle, /is-search-match|role="status"|title="Clear search"/);
-  const missing = renderSection("T99");
-  assert.match(missing, /T99 not found in either PST \/ Train Prep depot/);
+  const missing = renderSection("T47");
+  assert.match(missing, /47 not found in either PST \/ Train Prep depot/);
   assert.match(missing, /title="Clear search"/);
   assert.doesNotMatch(missing, /is-search-match/);
 });
@@ -209,8 +214,47 @@ test("PST cells expose actual block labels and accessible editable train IDs", (
 
 test("PST search uses a phone-sized hint while retaining its full cross-depot accessible label", () => {
   const html = renderSection("");
-  assert.match(html, /placeholder="Search train ID…"/);
-  assert.match(html, /aria-label="West Depot PST \/ Train Prep: search train ID across both depots"/);
+  assert.match(html, /placeholder="Search trains, e.g. 01 02 03"/);
+  assert.match(html, /aria-label="West Depot PST \/ Train Prep: search train numbers across both depots"/);
+});
+
+test("PST multi-train lookup deduplicates queries and labels each train's current locations", () => {
+  const west = { "WD-ST15": [{ trainId: "T03" }, { trainId: "04" }] };
+  const east = { "ED-ST02": [{ trainId: "T04" }, { trainId: "06" }] };
+  assert.deepEqual(lookup("03,04 T003 47", west, east), {
+    trainSearchKeys: ["T3", "T4", "T47"], trainSearchResults: [
+      { trainKey: "T3", location: "West Depot STB 15 Block 01" },
+      { trainKey: "T4", location: "West Depot STB 15 Block 02" },
+      { trainKey: "T4", location: "East Depot STB 02 Block 01" },
+    ],
+  });
+});
+
+test("both real PST grids highlight multiple trains without losing other trains or completion state", () => {
+  const west = { "WD-ST1": [{ trainId: "T03" }, { trainId: "04" }, null] };
+  const east = { "ED-ST02": [{ trainId: "T04" }, { trainId: "06" }, null] };
+  const before = structuredClone({ west, east });
+  const trainSearchResults = lookup("03 04 47", west, east).trainSearchResults;
+  for (const [depot, data, road, matches] of [["West", west, "WD-ST1", 2], ["East", east, "ED-ST02", 1]]) {
+    const html = renderSection("03 04 47", { title: `${depot.toUpperCase()} DEPOT — PST / TRAIN PREP`, data, roads: [road],
+      labelSide: depot === "West" ? "left" : "right", trainSearchResults,
+      pstState: { [`${road}-0`]: { trainKey: depot === "West" ? "T3" : "T4", done: true } } });
+    assert.equal((html.match(/theme-pst-card is-search-match/g) || []).length, matches);
+    assert.equal((html.match(/class="theme-pst-card/g) || []).length, 3);
+    assert.match(html, /is-pst-done/);
+    assert.match(html, /47 not found in either PST \/ Train Prep depot/);
+    assert.match(html, /West Depot STB 01 Block 01/);
+    assert.match(html, /East Depot STB 02 Block 01/);
+  }
+  assert.deepEqual({ west, east }, before);
+});
+
+test("PST mixed invalid input preserves valid matches and Escape clears the shared query", () => {
+  const html = renderSection("03 BAD");
+  assert.equal((html.match(/theme-pst-card is-search-match/g) || []).length, 1);
+  assert.match(html, /Use train numbers 01–47/);
+  assert.match(section, /event\.key === "Escape"\) onTrainSearchChange\?\.\(""\)/);
+  assert.match(section, /maxLength=\{512\}/);
 });
 
 test("both PST grids fill the panel instead of leaving space after the last block", () => {
