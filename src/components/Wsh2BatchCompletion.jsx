@@ -39,10 +39,22 @@ export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSu
   return <section className="wsh2-batch-panel" aria-label="Batch wash completion">
     <header><h2><Check size={16} />Batch wash completion</h2><p>Mark several trains Done at once.</p></header>
     <form onSubmit={submit}>
-      <label>Excel file / date<select aria-label="Batch wash Excel file and date" value={selectionKey} disabled={disabled} onChange={event => { setSelection(event.target.value); setError(''); setSuccess(''); }}>
-        <option value="">Select Excel file / date</option>
-        {options.map(item => <option key={item.key} value={item.key}>{formatWashDate(item.date)} — {item.fileName} ({item.count} trains)</option>)}
-      </select></label>
+      <fieldset className="wsh2-batch-file-picker" disabled={disabled}>
+        <legend>Excel file / date</legend>
+        <div className="wsh2-batch-file-options" role="radiogroup" aria-label="Batch wash Excel file and date" aria-disabled={disabled}>
+          {options.map(item => {
+            const checked = selectionKey === item.key;
+            return <label key={item.key} className={`wsh2-batch-file-choice${checked ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}`}>
+              <input type="radio" name="wsh2-batch-file-date" value={item.key} checked={checked} disabled={disabled}
+                aria-label={`${formatWashDate(item.date)} — ${item.fileName} (${item.count} ${item.count === 1 ? 'train' : 'trains'})`}
+                onChange={() => { setSelection(item.key); setError(''); setSuccess(''); }} />
+              <span className="wsh2-batch-file-tick" aria-hidden="true">{checked && <Check size={13} strokeWidth={3} />}</span>
+              <span className="wsh2-batch-file-info"><strong>{formatWashDate(item.date)}</strong><span>{item.fileName} · {item.count} {item.count === 1 ? 'train' : 'trains'}</span></span>
+            </label>;
+          })}
+          {!options.length && <p className="wsh2-batch-help">No Excel file/date available yet.</p>}
+        </div>
+      </fieldset>
       <label>Train numbers<textarea aria-label="Completed wash train numbers" aria-describedby="wsh2-batch-highlight-status" value={input} placeholder="01 02 03 04 05" rows={3} maxLength={WSH2_BATCH_MAX_INPUT} disabled={disabled} onChange={event => { setInput(event.target.value); setError(''); setSuccess(''); }} /></label>
       <p id="wsh2-batch-highlight-status" className="wsh2-batch-help" role="status" aria-live="polite">{input.trim() ? `${highlightedCount} matching ${highlightedCount === 1 ? 'row' : 'rows'} highlighted ${option ? 'in the selected file/date' : 'across all dates'}.` : 'Train numbers highlight matching rows as you type.'} Nothing is marked Done until Submit.</p>
       <p className="wsh2-batch-help">Only the selected file/date is updated. Wash details stay manual.</p>
