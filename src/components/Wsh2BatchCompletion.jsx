@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { formatWashDate } from '../lib/wsh2Records.js';
-import { getWashBatchOptions, WSH2_BATCH_MAX_INPUT } from '../lib/wsh2BatchCompletion.js';
+import { getWashBatchOptions, getWashBatchSelection, WSH2_BATCH_MAX_INPUT } from '../lib/wsh2BatchCompletion.js';
 
 export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSubmit, onPreviewChange, highlightedCount = 0 }) {
   const options = useMemo(() => getWashBatchOptions(rows, uploads), [rows, uploads]);
@@ -10,8 +10,13 @@ export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSu
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const option = options.find(item => item.key === selection);
+  const selectionKey = getWashBatchSelection(options, selection);
+  const option = options.find(item => item.key === selectionKey);
   const disabled = busy || blocked || submitting || !options.length;
+
+  useEffect(() => {
+    if (selection !== selectionKey) setSelection(selectionKey);
+  }, [selection, selectionKey]);
 
   useEffect(() => {
     onPreviewChange?.({ input, uploadId: option?.uploadId || '', date: option?.date || '' });
@@ -34,7 +39,7 @@ export default function Wsh2BatchCompletion({ rows, uploads, busy, blocked, onSu
   return <section className="wsh2-batch-panel" aria-label="Batch wash completion">
     <header><h2><Check size={16} />Batch wash completion</h2><p>Mark several trains Done at once.</p></header>
     <form onSubmit={submit}>
-      <label>Excel file / date<select aria-label="Batch wash Excel file and date" value={option ? selection : ''} disabled={disabled} onChange={event => { setSelection(event.target.value); setError(''); setSuccess(''); }}>
+      <label>Excel file / date<select aria-label="Batch wash Excel file and date" value={selectionKey} disabled={disabled} onChange={event => { setSelection(event.target.value); setError(''); setSuccess(''); }}>
         <option value="">Select Excel file / date</option>
         {options.map(item => <option key={item.key} value={item.key}>{formatWashDate(item.date)} — {item.fileName} ({item.count} trains)</option>)}
       </select></label>
