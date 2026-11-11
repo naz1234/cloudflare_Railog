@@ -4,6 +4,7 @@ import { formatWashDate, formatWashTime, groupWashRows, selectWashPrintRows, sum
 import Wsh2PrintDialog from './Wsh2PrintDialog.jsx';
 import Wsh2WashDetailsInput from './Wsh2WashDetailsInput.jsx';
 import Wsh2BatchCompletion from './Wsh2BatchCompletion.jsx';
+import Wsh2PendingWashSummary from './Wsh2PendingWashSummary.jsx';
 import { buildWashBatchPlan } from '../lib/wsh2BatchCompletion.js';
 import { findWashBatchTrainMatches, findWashTrainMatches, normalizeWashTrainSearch } from '../lib/wsh2TrainSearch.js';
 import '../wsh2.css';
@@ -263,7 +264,9 @@ export default function Wsh2Workspace() {
       {groups.map((group) => <section className="wsh2-date-group" key={group.date} aria-label={`Wash schedule ${formatWashDate(group.date)}`}><header><h2>{formatWashDate(group.date)}</h2><span>{group.rows.filter((row) => row.completed).length} of {group.rows.length} done</span></header>
         <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '12%' }} /><col style={{ width: '16%' }} /><col style={{ width: '14%' }} /><col style={{ width: '14%' }} /><col style={{ width: '14%' }} /><col style={{ width: '26%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Auto ON with Done</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
           {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} highlighted={matchedRowIds.has(row.id)} pending={pending.has(row.id) || uploading || Boolean(deleting) || batching} onChange={(changes, revision) => changeRow(row.id, changes, revision)} />)}
-        </tbody></table></div></section>)}
+        </tbody></table></div>
+        <Wsh2PendingWashSummary rows={group.rows} />
+      </section>)}
       <footer className="wsh2-paper-footer">Wash details: type manually, then press Enter or click outside to save. Print / Word: choose up to two uploaded Excel files for a one-page checklist.</footer>
     </div>}
     </div>
