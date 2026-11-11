@@ -20,6 +20,12 @@ export function getWashBatchOptions(rows = [], uploads = []) {
   });
 }
 
+export function getWashBatchSelection(options, selectedKey = '') {
+  if (options.some(option => option.key === selectedKey)) return selectedKey;
+  // Only one current file/date is unambiguous; never guess between dates.
+  return options.length === 1 ? options[0].key : '';
+}
+
 export function buildWashBatchPlan(rows, uploads, uploadId, date, input) {
   if (!getWashBatchOptions(rows, uploads).some(option => option.uploadId === uploadId && option.date === date)) {
     throw new Error('Choose an available Excel file and date first.');

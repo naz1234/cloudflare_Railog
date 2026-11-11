@@ -197,7 +197,7 @@ Unticking Done does not erase separately recorded HVAC or manual wash details. T
 
 **Batch completion**
 
-1. Under Uploaded Excel files, choose the exact file/date in Batch wash completion.
+1. Under Uploaded Excel files, review the file/date in Batch wash completion. A single available file/date is selected automatically, and a valid selection is kept during refreshes. If several options are available without a selection, choose the exact file/date manually.
 2. Enter train numbers such as `01 02 03 04 05`. Spaces, line breaks, commas and semicolons are accepted; repeated numbers count once. Valid short numbers are 01–47.
 3. Review the highlighted rows and selected date before submitting.
 4. Submit completed wash marks those rows Done with HVAC ON. Locations and manually typed wash details remain unchanged.
