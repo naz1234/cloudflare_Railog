@@ -21,8 +21,8 @@ TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 
 # Custom PIN mode also requires encrypted AUTH_HMAC_SECRET,
 # AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.
-# TEMPORARY_LOGIN optionally enables a shared outage password (16–128 printable
-# ASCII characters, case-insensitive). Pages only; never commit its value.
+# TEMPORARY_LOGIN optionally enables a shared access word in the normal login
+# field (8–128 ASCII letters/digits/_/-, case-insensitive). Pages only; keep secret.
 # Delete/rotate it and redeploy Pages to disable/revoke temporary sessions.
 # AUTH_PRESENCE_HIDDEN_EMAILS and AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS are
 # optional encrypted Pages-only secrets. Their combined entries must be unique

@@ -35,11 +35,6 @@
   const requestReference = document.getElementById('request-reference');
   const message = document.getElementById('auth-message');
   const emailInput = document.getElementById('login-email');
-  const temporaryLoginToggle = document.getElementById('temporary-login-toggle');
-  const entryLabel = document.getElementById('login-entry-label');
-  const emailHelp = document.getElementById('email-help');
-  const privacyNote = document.getElementById('login-privacy-note');
-  const requestDescription = document.getElementById('login-request-description');
   const turnstileShell = document.getElementById('turnstile-shell');
   const turnstileStatus = document.getElementById('turnstile-status');
   const pinContainer = document.getElementById('pin-inputs');
@@ -65,7 +60,6 @@
   let activeEmailHint = '';
   let codeOnlyEnabled = false;
   let temporaryLoginEnabled = false;
-  let temporaryMode = false;
   let codeRetryDeadline = 0;
   let codeRetryTimer = 0;
   let loginReady = false;
@@ -145,34 +139,11 @@
     return codeOnlyEnabled && /^\d{6}$/.test(value) ? value : '';
   }
 
-  function readTemporaryPassword() {
-    const value = emailInput.value;
-    return temporaryLoginEnabled && temporaryMode && /^[\x20-\x7e]{16,128}$/.test(value)
-      && value.trim() === value ? value : '';
+  function readTemporaryAccessCode() {
+    const value = emailInput.value.trim();
+    // The server compares the Cloudflare setting; no access word is embedded here.
+    return temporaryLoginEnabled && /^[a-z0-9_-]{8,128}$/i.test(value) ? value : '';
   }
-
-  temporaryLoginToggle.addEventListener('click', () => {
-    if (!temporaryLoginEnabled || !loginReady || isBusy || loginCompleted || loginCard.dataset.stage !== 'request') return;
-    temporaryMode = !temporaryMode;
-    loginProgress.hidden = temporaryMode;
-    privacyNote.hidden = temporaryMode;
-    clearChallenge({ clearEmail: true });
-    emailInput.value = '';
-    emailInput.removeAttribute('aria-invalid');
-    emailInput.setAttribute('type', temporaryMode ? 'password' : 'email');
-    emailInput.setAttribute('inputmode', temporaryMode ? 'text' : 'email');
-    emailInput.setAttribute('maxlength', temporaryMode ? '128' : '254');
-    emailInput.setAttribute('placeholder', temporaryMode ? 'Temporary password' : 'firstname.lastname@flow-metro.com');
-    entryLabel.textContent = temporaryMode ? 'TEMPORARY LOGIN' : 'FLOW METRO EMAIL';
-    requestDescription.textContent = temporaryMode ? 'Use the approved temporary password to sign in.' : 'Enter your approved FLOW work email.';
-    emailHelp.textContent = temporaryMode ? 'Enter the private temporary password. No email code is sent.'
-      : 'Use your work email or another address approved for access.';
-    temporaryLoginToggle.textContent = temporaryMode ? 'Use email login' : 'Temporary login';
-    showMessage('');
-    resetTurnstile();
-    updateRequestButton();
-    emailInput.focus();
-  });
 
   function maskLoginEmail(value) {
     const email = normalizeLoginEmail(value);
@@ -312,17 +283,15 @@
   }
 
   function updateRequestButton() {
-    const usesAccessCode = temporaryMode || Boolean(readAccessCode());
+    const usesAccessCode = Boolean(readAccessCode() || readTemporaryAccessCode());
     const requestWaitRemaining = remainingSeconds(usesAccessCode ? codeRetryDeadline : resendDeadline);
-    const hasValidEntry = temporaryMode ? Boolean(readTemporaryPassword())
-      : Boolean(readAccessCode()) || Boolean(normalizeLoginEmail(emailInput.value));
-    emailInput.setAttribute('autocomplete', temporaryMode || /^\d+$/.test(emailInput.value.trim()) ? 'off' : 'username');
-    temporaryLoginToggle.disabled = !loginReady || isBusy || loginCompleted;
+    const hasValidEntry = usesAccessCode || Boolean(normalizeLoginEmail(emailInput.value));
+    emailInput.setAttribute('autocomplete', usesAccessCode || /^\d+$/.test(emailInput.value.trim()) ? 'off' : 'username');
     requestButton.disabled = !loginReady || isBusy || !turnstileToken || !hasValidEntry || requestWaitRemaining > 0;
     if (!isBusy) {
       requestButton.querySelector('span').textContent = requestWaitRemaining > 0
         ? `Try again in ${formatTime(requestWaitRemaining)}`
-        : (turnstileToken && hasValidEntry ? 'Continue' : temporaryMode ? 'Complete Password and Security Check' : 'Complete Email and Security Check');
+        : (turnstileToken && hasValidEntry ? 'Continue' : 'Complete Email and Security Check');
     }
   }
 
@@ -360,7 +329,6 @@
       if (!response.ok || !data.siteKey) throw new Error('auth_config_unavailable');
       codeOnlyEnabled = data.codeOnlyEnabled === true;
       temporaryLoginEnabled = data.temporaryLoginEnabled === true;
-      temporaryLoginToggle.hidden = !temporaryLoginEnabled;
       turnstileWidgetId = turnstile.render('#turnstile-widget', {
         sitekey: data.siteKey,
         theme: 'dark',
@@ -620,12 +588,11 @@
 
   async function signInWithAccessCode() {
     updateRequestButton();
-    const isTemporary = temporaryMode;
-    const code = isTemporary ? readTemporaryPassword() : readAccessCode();
+    const isTemporary = Boolean(readTemporaryAccessCode());
+    const code = isTemporary ? readTemporaryAccessCode() : readAccessCode();
     if (requestButton.disabled || loginCompleted || !code || loginCard.dataset.stage !== 'request') return;
     const submittedToken = turnstileToken;
     isBusy = true;
-    temporaryLoginToggle.disabled = true;
     emailInput.disabled = true;
     emailInput.value = '';
     setButtonBusy(requestButton, true, 'Signing in');
@@ -633,9 +600,7 @@
     showMessage('');
     try {
       const { response, data } = await api(isTemporary ? '/api/auth/temporary-login' : '/api/auth/code-only', {
-        method: 'POST', body: isTemporary
-          ? JSON.stringify({ password: code, turnstileToken: submittedToken })
-          : JSON.stringify({ code, turnstileToken: submittedToken }),
+        method: 'POST', body: JSON.stringify({ code, turnstileToken: submittedToken }),
       });
       if (response.status === 429) {
         codeRetryDeadline = Date.now() + retryAfterSeconds(response, data) * 1000;
@@ -676,7 +641,7 @@
   }
 
   emailInput.addEventListener('blur', () => {
-    if (emailInput.value && !(temporaryMode ? readTemporaryPassword() : normalizeLoginEmail(emailInput.value) || readAccessCode())) {
+    if (emailInput.value && !normalizeLoginEmail(emailInput.value) && !readAccessCode() && !readTemporaryAccessCode()) {
       emailInput.setAttribute('aria-invalid', 'true');
     }
   });
@@ -684,7 +649,7 @@
   requestForm.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!loginReady || isBusy || loginCompleted) return;
-    return temporaryMode || readAccessCode() ? signInWithAccessCode() : requestCode();
+    return readAccessCode() || readTemporaryAccessCode() ? signInWithAccessCode() : requestCode();
   });
 
   resendButton.addEventListener('click', () => requestCode({ isResend: true }));

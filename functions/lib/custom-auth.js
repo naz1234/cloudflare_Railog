@@ -163,7 +163,7 @@ export function findAllowedAuthMember(config, email) {
 }
 
 export function getCustomAuthConfiguration(env = {}) {
-  const temporaryPassword = parseTemporaryPassword(env.TEMPORARY_LOGIN);
+  const temporaryAccessCode = parseTemporaryAccessCode(env.TEMPORARY_LOGIN);
   const staffMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
   const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
   const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
@@ -218,7 +218,7 @@ export function getCustomAuthConfiguration(env = {}) {
     allowedMembers,
     codeOnlyPin: /^\d{6}$/.test(String(env.AUTH_CODE_ONLY_PIN || ''))
       ? String(env.AUTH_CODE_ONLY_PIN) : '',
-    temporaryPassword,
+    temporaryAccessCode,
     hmacSecret,
     issues,
     turnstileSecretKey,
@@ -441,20 +441,20 @@ export function hashAuthEmail({ email, hmacSecret }) {
 
 // Keep shared access separate from approved email identities. Rotating or
 // removing the secret invalidates its sessions without affecting email login.
-export function parseTemporaryPassword(value) {
-  return typeof value === 'string' && /^[\x20-\x7e]{16,128}$/.test(value)
-    && value.trim() === value ? value.toLowerCase() : '';
+export function parseTemporaryAccessCode(value) {
+  const code = typeof value === 'string' ? value.trim() : '';
+  return /^[a-z0-9_-]{8,128}$/i.test(code) ? code.toLowerCase() : '';
 }
 
 export async function getTemporaryAuthMember(config) {
-  if (!config.temporaryPassword) return null;
+  if (!config.temporaryAccessCode) return null;
   return {
     email: '',
     name: 'Temporary access',
     memberHash: await hashPin({
       challengeId: 'temporary-login-session-v1',
       hmacSecret: config.hmacSecret,
-      pin: config.temporaryPassword,
+      pin: config.temporaryAccessCode,
     }),
   };
 }
