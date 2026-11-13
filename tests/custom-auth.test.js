@@ -501,6 +501,28 @@ test('additional staff extends existing approvals, deduplicates and validates ex
   assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_STAFF_EMAILS: 'extra@flow-metro.com' })).valid, false);
 });
 
+test('external extension preserves all existing identities, exact matching and fail-closed limits', () => {
+  const env = makeEnv({
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_ADDITIONAL_STAFF_EMAILS: 'Extra.Staff@flow-metro.com',
+    AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'guest.user@example.net;New.Guest@example.net;NEW.GUEST@EXAMPLE.NET;member.one@flow-metro.com',
+  });
+  const config = getCustomAuthConfiguration(env);
+  assert.equal(config.valid, true);
+  assert.deepEqual(config.allowedMembers.map(member => member.email), [...allowedEmails, 'Guest.User@example.net', 'Extra.Staff@flow-metro.com', 'New.Guest@example.net']);
+  assert.equal(findAllowedAuthMember(config, 'NEW.GUEST@example.net').name, 'New.Guest');
+  assert.equal(findAllowedAuthMember(config, 'unlisted@example.net'), null);
+  assert.equal(findAllowedAuthMember(getCustomAuthConfiguration({ ...env, AUTH_ADDITIONAL_EXTERNAL_EMAILS: '' }), 'new.guest@example.net'), null);
+  for (const value of ['invalid', '@example.net', '*.example.net', '*@example.net', 'new.guest@example.net;invalid',
+    Array.from({ length: 98 }, (_, index) => `Guest.${index}@example.net`).join('\n')]) {
+    assert.equal(getCustomAuthConfiguration({ ...env, AUTH_ADDITIONAL_EXTERNAL_EMAILS: value }).valid, false);
+  }
+  assert.equal(getCustomAuthConfiguration({ ...env, AUTH_ALLOWED_EMAILS: '' }).valid, false);
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`).join('\n');
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'staff.0@flow-metro.com' })).valid, true);
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'extra@example.net' })).valid, false);
+});
+
 test('allowlist capacity counts unique addresses and duplicates never hide malformed entries', () => {
   const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`);
   const config = getCustomAuthConfiguration(makeEnv({
@@ -554,8 +576,8 @@ test('duplicate lists permit one PIN delivery and session per approved staff or 
   }
 });
 
-test('approved external user completes PIN login and loses access when removed', async () => {
-  const env = makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net' });
+for (const setting of ['AUTH_ADDITIONAL_ALLOWED_EMAILS', 'AUTH_ADDITIONAL_EXTERNAL_EMAILS']) test(`approved external user in ${setting} completes PIN login and loses access when removed`, async () => {
+  const env = makeEnv({ [setting]: 'Guest.User@example.net' });
   const store = createMemoryStore();
   let delivery;
   const requestEndpoint = createRequestCodeEndpoint({

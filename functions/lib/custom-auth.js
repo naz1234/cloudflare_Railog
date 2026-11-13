@@ -166,9 +166,11 @@ export function getCustomAuthConfiguration(env = {}) {
   const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
   const rawAdditionalStaff = String(env.AUTH_ADDITIONAL_STAFF_EMAILS || '').trim();
   const additionalStaffMembers = parseAllowedAuthMembers(rawAdditionalStaff);
+  const rawAdditionalExternal = String(env.AUTH_ADDITIONAL_EXTERNAL_EMAILS || '').trim();
+  const additionalExternalMembers = parseAllowedAuthMembers(rawAdditionalExternal, { allowExternal: true });
   // Keep the first canonical identity, with the staff list taking precedence.
   const membersByEmail = new Map();
-  for (const member of [...staffMembers, ...additionalMembers, ...additionalStaffMembers]) {
+  for (const member of [...staffMembers, ...additionalMembers, ...additionalStaffMembers, ...additionalExternalMembers]) {
     if (!membersByEmail.has(member.normalizedEmail)) {
       membersByEmail.set(member.normalizedEmail, member);
     }
@@ -184,6 +186,7 @@ export function getCustomAuthConfiguration(env = {}) {
   }
   if (
     (rawAdditional && !additionalMembers.length)
+    || (rawAdditionalExternal && (!additionalExternalMembers.length || rawAdditionalExternal.includes('*')))
     || allowedMembers.length > 100
   ) {
     issues.push('Approved email lists must contain valid addresses, with at most 100 unique approved addresses across all lists.');
