@@ -102,13 +102,16 @@ function getConfiguration(env = {}) {
   const additional = parseAllowedEmails(rawAdditional, { allowExternal: true });
   const rawAdditionalStaff = String(env.AUTH_ADDITIONAL_STAFF_EMAILS || '').trim();
   const additionalStaff = parseAllowedEmails(rawAdditionalStaff);
+  const rawAdditionalExternal = String(env.AUTH_ADDITIONAL_EXTERNAL_EMAILS || '').trim();
+  const additionalExternal = parseAllowedEmails(rawAdditionalExternal, { allowExternal: true });
   // Match Pages: first canonical spelling wins, preferring the staff list.
   const recipients = new Map(allowed.recipients);
-  for (const [normalized, canonical] of [...additional.recipients, ...additionalStaff.recipients]) {
+  for (const [normalized, canonical] of [...additional.recipients, ...additionalStaff.recipients, ...additionalExternal.recipients]) {
     if (!recipients.has(normalized)) recipients.set(normalized, canonical);
   }
   const additionalValid = (!rawAdditional || additional.valid)
     && (!rawAdditionalStaff || additionalStaff.valid)
+    && (!rawAdditionalExternal || (additionalExternal.valid && !rawAdditionalExternal.includes('*')))
     && recipients.size <= MAX_ALLOWED_RECIPIENTS;
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();

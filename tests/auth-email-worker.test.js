@@ -302,6 +302,41 @@ test('additional staff is approved alongside existing users with exact matching 
   }
 });
 
+test('external extension keeps existing users and recipient spelling, rejects unapproved users and invalid lists', async () => {
+  const overrides = {
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_ADDITIONAL_STAFF_EMAILS: 'Extra.Staff@flow-metro.com',
+    AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'guest.user@example.net;New.Guest@example.net;NEW.GUEST@EXAMPLE.NET;first.user@flow-metro.com',
+  };
+  for (const recipient of ['First.User@flow-metro.com', 'Second.User@flow-metro.com', 'Guest.User@example.net', 'Extra.Staff@flow-metro.com', 'New.Guest@example.net']) {
+    const { env, fetcher, providerCalls } = createEnv(overrides);
+    assert.equal((await handle(createRequest({ body: { pin: '012345', recipient: recipient.toLowerCase(), requestRef: 'EXTEND' } }), env, fetcher)).status, 200);
+    assert.equal(providerCalls.filter(call => call.url === sendEndpoint).length, 1);
+    const mime = Buffer.from(JSON.parse(providerCalls[1].init.body).raw, 'base64url').toString('utf8');
+    assert.ok(mime.includes(`To: ${recipient}\r\n`));
+  }
+  for (const value of ['', 'New.Guest@example.net']) {
+    const { env, fetcher, providerCalls } = createEnv({ ...overrides, AUTH_ADDITIONAL_EXTERNAL_EMAILS: value });
+    assert.equal((await handle(createRequest({ body: { pin: '012345', recipient: 'unlisted@example.net', requestRef: 'EXTEND' } }), env, fetcher)).status, 400);
+    assert.equal(providerCalls.length, 0);
+  }
+  for (const value of ['invalid', '@example.net', '*.example.net', '*@example.net', 'new.guest@example.net;invalid',
+    Array.from({ length: 97 }, (_, index) => `Guest.${index}@example.net`).join('\n')]) {
+    const { env, fetcher, providerCalls } = createEnv({ ...overrides, AUTH_ADDITIONAL_EXTERNAL_EMAILS: value });
+    assert.equal((await handle(createRequest(), env, fetcher)).status, 503);
+    assert.equal(providerCalls.length, 0);
+  }
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`).join('\n');
+  for (const [value, expected] of [['staff.0@flow-metro.com', 200], ['extra@example.net', 503]]) {
+    const { env, fetcher, providerCalls } = createEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_EXTERNAL_EMAILS: value });
+    assert.equal((await handle(createRequest({ body: { pin: '012345', recipient: 'staff.0@flow-metro.com', requestRef: 'EXTEND' } }), env, fetcher)).status, expected);
+    assert.equal(providerCalls.length, expected === 200 ? 2 : 0);
+  }
+  const missingStaff = createEnv({ ...overrides, AUTH_ALLOWED_EMAILS: '' });
+  assert.equal((await handle(createRequest(), missingStaff.env, missingStaff.fetcher)).status, 503);
+  assert.equal(missingStaff.providerCalls.length, 0);
+});
+
 test('duplicate recipients send exactly once, preserve canonical casing and do not block other approved users', async () => {
   const overrides = {
     AUTH_ALLOWED_EMAILS: 'First.User@flow-metro.com;FIRST.USER@FLOW-METRO.COM;Second.User@flow-metro.com;second.user@flow-metro.com',
