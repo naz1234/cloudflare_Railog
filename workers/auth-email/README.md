@@ -18,6 +18,8 @@ For individually approved external addresses, set the optional encrypted `AUTH_A
 
 `AUTH_ADDITIONAL_EXTERNAL_EMAILS` is an optional encrypted extension for adding exact addresses without replacing an unreadable existing external list. Configure it identically on this Worker and Pages only after both support it. Existing identities win, duplicates are ignored, and malformed entries or more than 100 combined unique recipients fail closed. Do not send a real PIN just to test an allowlist change.
 
+`KHAIRIL_GMAIL` optionally holds one exact approved address under a readable setting name. Configure it as an encrypted secret on both services. Deploy support first and preserve the original canonical spelling when migrating; overlap is deduplicated, and removing the old setting must not remove other people's entries. Redeploy Pages after changing its bindings. The actual address must never be committed.
+
 See [the complete staged deployment and cutover guide](../../docs/custom-pin-auth.md).
 
 The optional encrypted `AUTH_ADDITIONAL_STAFF_EMAILS` secret adds exact `flow-metro.com` staff addresses without replacing either existing encrypted list. Configure it identically on Pages and this Worker. Existing canonical recipient spellings take precedence, and the combined limit is 100 unique addresses across all three lists. Invalid or external entries in this staff-only list fail closed. Deploy the supporting code to both services before relying on the new list.

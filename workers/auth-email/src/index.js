@@ -104,14 +104,17 @@ function getConfiguration(env = {}) {
   const additionalStaff = parseAllowedEmails(rawAdditionalStaff);
   const rawAdditionalExternal = String(env.AUTH_ADDITIONAL_EXTERNAL_EMAILS || '').trim();
   const additionalExternal = parseAllowedEmails(rawAdditionalExternal, { allowExternal: true });
+  const rawNamedExternal = String(env.KHAIRIL_GMAIL || '').trim();
+  const namedExternal = parseAllowedEmails(rawNamedExternal, { allowExternal: true });
   // Match Pages: first canonical spelling wins, preferring the staff list.
   const recipients = new Map(allowed.recipients);
-  for (const [normalized, canonical] of [...additional.recipients, ...additionalStaff.recipients, ...additionalExternal.recipients]) {
+  for (const [normalized, canonical] of [...additional.recipients, ...additionalStaff.recipients, ...additionalExternal.recipients, ...namedExternal.recipients]) {
     if (!recipients.has(normalized)) recipients.set(normalized, canonical);
   }
   const additionalValid = (!rawAdditional || additional.valid)
     && (!rawAdditionalStaff || additionalStaff.valid)
     && (!rawAdditionalExternal || (additionalExternal.valid && !rawAdditionalExternal.includes('*')))
+    && (!rawNamedExternal || (namedExternal.valid && namedExternal.recipients.size === 1 && !/[\s,;*]/.test(rawNamedExternal)))
     && recipients.size <= MAX_ALLOWED_RECIPIENTS;
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();

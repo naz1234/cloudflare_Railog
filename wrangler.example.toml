@@ -16,6 +16,8 @@ TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 # custom PIN mode. Store it as an encrypted secret on both Pages and the mailer.
 # AUTH_ADDITIONAL_EXTERNAL_EMAILS is an optional encrypted exact-address extension
 # on both services when an existing external list cannot safely be replaced.
+# KHAIRIL_GMAIL optionally names one exact address in an encrypted secret on both
+# services. Keep its actual value out of Git; preserve existing lists on migration.
 
 # Custom PIN mode also requires encrypted AUTH_HMAC_SECRET,
 # AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.

@@ -523,6 +523,23 @@ test('external extension preserves all existing identities, exact matching and f
   assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'extra@example.net' })).valid, false);
 });
 
+test('named external secret safely migrates one identity without changing existing users or limits', () => {
+  const legacy = makeEnv({ AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'Guest.User@example.net' });
+  const named = makeEnv({ KHAIRIL_GMAIL: 'Guest.User@example.net' });
+  assert.deepEqual(getCustomAuthConfiguration(named).allowedMembers, getCustomAuthConfiguration(legacy).allowedMembers);
+  const config = getCustomAuthConfiguration({ ...legacy, KHAIRIL_GMAIL: 'guest.user@example.net' });
+  assert.equal(config.valid, true);
+  assert.deepEqual(config.allowedMembers, getCustomAuthConfiguration(legacy).allowedMembers);
+  assert.equal(findAllowedAuthMember(config, 'unknown@example.net'), null);
+  for (const value of ['invalid', '*@example.net', 'Guest.User@example.net,', 'Guest.User@example.net;', 'Guest.User@example.net Other.User@example.net']) {
+    assert.equal(getCustomAuthConfiguration({ ...legacy, KHAIRIL_GMAIL: value }).valid, false);
+  }
+  assert.equal(getCustomAuthConfiguration({ ...named, AUTH_ALLOWED_EMAILS: '' }).valid, false);
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`).join('\n');
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, KHAIRIL_GMAIL: 'staff.0@flow-metro.com' })).valid, true);
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, KHAIRIL_GMAIL: 'extra@example.net' })).valid, false);
+});
+
 test('allowlist capacity counts unique addresses and duplicates never hide malformed entries', () => {
   const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`);
   const config = getCustomAuthConfiguration(makeEnv({
@@ -576,7 +593,7 @@ test('duplicate lists permit one PIN delivery and session per approved staff or 
   }
 });
 
-for (const setting of ['AUTH_ADDITIONAL_ALLOWED_EMAILS', 'AUTH_ADDITIONAL_EXTERNAL_EMAILS']) test(`approved external user in ${setting} completes PIN login and loses access when removed`, async () => {
+for (const setting of ['AUTH_ADDITIONAL_ALLOWED_EMAILS', 'AUTH_ADDITIONAL_EXTERNAL_EMAILS', 'KHAIRIL_GMAIL']) test(`approved external user in ${setting} completes PIN login and loses access when removed`, async () => {
   const env = makeEnv({ [setting]: 'Guest.User@example.net' });
   const store = createMemoryStore();
   let delivery;
@@ -603,6 +620,12 @@ for (const setting of ['AUTH_ADDITIONAL_ALLOWED_EMAILS', 'AUTH_ADDITIONAL_EXTERN
   const sessionRequest = makeRequest('/api/auth/session', { method: 'GET', cookie });
   const authorized = await authorizeCustomSessionRequest({ request: sessionRequest, env, store, now: nowMs + 2000 });
   assert.equal(authorized.authorized, true);
+  if (setting === 'KHAIRIL_GMAIL') {
+    for (const transitionEnv of [makeEnv({ AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'Guest.User@example.net' }),
+      { ...env, AUTH_ADDITIONAL_EXTERNAL_EMAILS: 'guest.user@example.net' }]) {
+      assert.equal((await authorizeCustomSessionRequest({ request: sessionRequest, env: transitionEnv, store, now: nowMs + 2000 })).authorized, true);
+    }
+  }
   const removed = await authorizeCustomSessionRequest({ request: sessionRequest, env: makeEnv(), store, now: nowMs + 2000 });
   assert.equal(removed.authorized, false);
   assert.equal(removed.reason, 'invalid_session');
