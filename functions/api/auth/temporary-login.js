@@ -4,7 +4,7 @@ import {
   createCustomAuthStore, generateOpaqueToken, getAuthMode, getClientIp,
   getCustomAuthConfiguration, getTemporaryAuthMember, hashPin, hashSessionToken,
   isSameOriginRequest, jsonResponse, methodNotAllowedResponse, optionsResponse,
-  parseTemporaryPassword, readJsonObject, serializeSecureCookie, toEpochSeconds,
+  parseTemporaryAccessCode, readJsonObject, serializeSecureCookie, toEpochSeconds,
 } from '../../lib/custom-auth.js';
 import { verifyTurnstileToken } from '../../lib/custom-auth-turnstile.js';
 
@@ -21,12 +21,12 @@ export function createTemporaryLoginEndpoint({
     if (!isSameOriginRequest(request)) return authErrorResponse(403, 'INVALID_ORIGIN', 'Request origin is not allowed.');
     if (getAuthMode(env) !== AUTH_MODES.customPin) return authErrorResponse(404, 'NOT_FOUND', 'Not found.');
     const parsed = await readJsonObject(request);
-    const password = parseTemporaryPassword(parsed.body?.password);
-    if (!parsed.ok || !password || Object.keys(parsed.body).some(key => !['password', 'turnstileToken'].includes(key))) {
-      return authErrorResponse(400, 'INVALID_REQUEST', 'Enter a valid temporary password.');
+    const code = parseTemporaryAccessCode(parsed.body?.code);
+    if (!parsed.ok || !code || Object.keys(parsed.body).some(key => !['code', 'turnstileToken'].includes(key))) {
+      return authErrorResponse(400, 'INVALID_REQUEST', 'Enter a valid temporary access code.');
     }
     const config = getCustomAuthConfiguration(env);
-    if (!config.valid || !config.temporaryPassword) return unavailableResponse();
+    if (!config.valid || !config.temporaryAccessCode) return unavailableResponse();
     try {
       const store = createStore(config.db);
       const timestamp = toEpochSeconds(now());
@@ -45,10 +45,10 @@ export function createTemporaryLoginEndpoint({
         ? unavailableResponse()
         : authErrorResponse(400, 'VERIFICATION_REQUIRED', 'Please complete the security check and try again.');
       const [expected, submitted] = await Promise.all([
-        hashPin({ challengeId: 'temporary-login-verify-v1', hmacSecret: config.hmacSecret, pin: config.temporaryPassword }),
-        hashPin({ challengeId: 'temporary-login-verify-v1', hmacSecret: config.hmacSecret, pin: password }),
+        hashPin({ challengeId: 'temporary-login-verify-v1', hmacSecret: config.hmacSecret, pin: config.temporaryAccessCode }),
+        hashPin({ challengeId: 'temporary-login-verify-v1', hmacSecret: config.hmacSecret, pin: code }),
       ]);
-      if (!constantTimeEqual(expected, submitted)) return authErrorResponse(401, 'INVALID_PASSWORD', 'Unable to sign in. Check your entry.');
+      if (!constantTimeEqual(expected, submitted)) return authErrorResponse(401, 'INVALID_CODE', 'Unable to sign in. Check your entry.');
       const member = await getTemporaryAuthMember(config);
       const token = generateOpaqueToken(32);
       const tokenHash = await hashSessionToken({ hmacSecret: config.hmacSecret, token });
