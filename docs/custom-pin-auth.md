@@ -16,6 +16,16 @@ Deploy the additional-address support to both Pages and the private mailer, then
 
 > **Keep Cloudflare Access enabled during setup and testing.** This repository defaults to `AUTH_MODE=cloudflare_access`. Do not switch production to `custom_pin` or disable the Access application until the mailer, Turnstile, D1 migration, secrets, and the full verification checklist below are complete.
 
+## Temporary outage login
+
+`TEMPORARY_LOGIN` is an optional encrypted **Pages-only** secret containing a private, randomly generated password of 16–128 printable ASCII characters, with no leading/trailing whitespace. The setting name and words such as `temporarylogin` are not passwords. Password matching is case-insensitive; use a long random value even though letter casing does not matter. Never commit or send its actual value in chat, logs or a PR. Keep it disabled unless a temporary shared fallback is approved. The email mailer does not need this secret.
+
+After setting the secret, **redeploy Pages**. The normal login then offers **Temporary login**, with a masked password field and no email/PIN delivery. The server still requires Turnstile, exact same origin, IP/global attempt limits and the existing D1-backed HttpOnly session. The shared identity is **Temporary access**, not an individual staff email, and it is omitted from public online presence. Normal staff-email and existing code-only login remain unchanged. This is a login fallback, not an administrator/unlock override.
+
+To disable it, delete `TEMPORARY_LOGIN` from **Production → Variables and secrets**, then **redeploy Pages**. Deleting a Pages secret alone does not replace the environment of an existing deployment. The new deployment hides the option, rejects new temporary logins, and rejects all existing temporary sessions on their next protected request. Replacing the password and redeploying also invalidates its sessions (a case-only change is the same effective password). Neither action revokes individual email or code-only sessions. No database migration is required, and no authentication protection or Cloudflare Access mode should be disabled.
+
+The account owner should enter or rotate the password directly in Cloudflare, not share it with an agent. Do not enable a publicly known/example value or send live staff PINs just to test this fallback.
+
 ## Security model
 
 - The canonical `/login` route (plus `/login.html`), its exact login assets, the favicon, and required `/api/auth/*` methods are public in custom mode. The Railog HTML, dashboard bundle, images, and operational APIs remain behind server middleware. The retired Removal summary QR page, scanner assets and API return HTTP 410 without reading sessions or invoking OCR; manual train/TID entry and operational syncing remain unchanged.

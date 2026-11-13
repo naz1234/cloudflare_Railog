@@ -46,6 +46,7 @@ export function createAuthConfigEndpoint({
     return jsonResponse({
       siteKey: config.turnstileSiteKey,
       codeOnlyEnabled: Boolean(config.codeOnlyPin),
+      ...(config.temporaryPassword ? { temporaryLoginEnabled: true } : {}),
     });
   };
 }

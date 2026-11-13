@@ -19,6 +19,8 @@ export const AUTH_RATE_LIMITS = Object.freeze({
   verifyIpWindow: { action: 'verify-ip-window', limit: 150, windowSeconds: 15 * 60 },
   codeOnlyIpWindow: { action: 'code-only-ip', limit: 5, windowSeconds: 15 * 60 },
   codeOnlyGlobalWindow: { action: 'code-only-global', limit: 100, windowSeconds: 60 * 60 },
+  temporaryIpWindow: { action: 'temporary-login-ip', limit: 5, windowSeconds: 15 * 60 },
+  temporaryGlobalWindow: { action: 'temporary-login-global', limit: 100, windowSeconds: 60 * 60 },
 });
 
 export const CUSTOM_AUTH_SCHEMA_STATEMENTS = Object.freeze([
@@ -161,6 +163,7 @@ export function findAllowedAuthMember(config, email) {
 }
 
 export function getCustomAuthConfiguration(env = {}) {
+  const temporaryPassword = parseTemporaryPassword(env.TEMPORARY_LOGIN);
   const staffMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
   const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
   const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
@@ -215,6 +218,7 @@ export function getCustomAuthConfiguration(env = {}) {
     allowedMembers,
     codeOnlyPin: /^\d{6}$/.test(String(env.AUTH_CODE_ONLY_PIN || ''))
       ? String(env.AUTH_CODE_ONLY_PIN) : '',
+    temporaryPassword,
     hmacSecret,
     issues,
     turnstileSecretKey,
@@ -437,6 +441,24 @@ export function hashAuthEmail({ email, hmacSecret }) {
 
 // Keep shared access separate from approved email identities. Rotating or
 // removing the secret invalidates its sessions without affecting email login.
+export function parseTemporaryPassword(value) {
+  return typeof value === 'string' && /^[\x20-\x7e]{16,128}$/.test(value)
+    && value.trim() === value ? value.toLowerCase() : '';
+}
+
+export async function getTemporaryAuthMember(config) {
+  if (!config.temporaryPassword) return null;
+  return {
+    email: '',
+    name: 'Temporary access',
+    memberHash: await hashPin({
+      challengeId: 'temporary-login-session-v1',
+      hmacSecret: config.hmacSecret,
+      pin: config.temporaryPassword,
+    }),
+  };
+}
+
 export async function getCodeOnlyAuthMember(config) {
   if (!config.codeOnlyPin) return null;
   return {
@@ -723,9 +745,10 @@ export async function authorizeCustomSessionRequest({
     }
 
     const sharedMember = await getCodeOnlyAuthMember(config);
-    const member = sharedMember && constantTimeEqual(sharedMember.memberHash, session.email_hash)
-      ? sharedMember
-      : await findAllowedAuthMemberByHash(config, session.email_hash);
+    const temporaryMember = await getTemporaryAuthMember(config);
+    const member = [sharedMember, temporaryMember].find(candidate => candidate
+      && constantTimeEqual(candidate.memberHash, session.email_hash))
+      || await findAllowedAuthMemberByHash(config, session.email_hash);
     if (!member) {
       return {
         authorized: false,
