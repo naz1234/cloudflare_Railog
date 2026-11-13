@@ -17,6 +17,8 @@ import {
   getAuthPresenceConfiguration,
   getCustomAuthConfiguration,
   getCodeOnlyAuthMember,
+  getTemporaryAuthMember,
+  parseTemporaryPassword,
   hashAuthEmail,
   hashPin,
   hashSessionToken,
@@ -38,6 +40,7 @@ import { createSessionEndpoint } from '../functions/api/auth/session.js';
 import { createVerifyCodeEndpoint } from '../functions/api/auth/verify-code.js';
 import { createPresenceEndpoint } from '../functions/api/auth/presence.js';
 import { createCodeOnlyEndpoint } from '../functions/api/auth/code-only.js';
+import { createTemporaryLoginEndpoint } from '../functions/api/auth/temporary-login.js';
 import { createAuthMiddleware } from '../functions/_middleware.js';
 
 const origin = 'https://railog.example.com';
@@ -186,6 +189,120 @@ test('the optional secret exposes only availability, is absent from client files
   assert.match(member.memberHash, /^[a-f0-9]{64}$/);
   for (const file of ['public/login.html', 'public/auth/login.js', 'public/auth/login.css']) {
     assert.doesNotMatch(await readFile(new URL(`../${file}`, import.meta.url), 'utf8'), /AUTH_CODE_ONLY_PIN|123456/);
+  }
+});
+
+test('temporary login is optional, case-insensitive, bounded, and reveals only enabled state', async () => {
+  assert.equal(parseTemporaryPassword('Fixture-Backup-Access-27'), 'fixture-backup-access-27');
+  for (const value of ['', 'TEMPORARY_LOGIN', 'temporarylogin', 'a'.repeat(129), ' fixture-backup-access-27', 'fixture-backup-access-27\n', 123456]) {
+    assert.equal(parseTemporaryPassword(value), '');
+    assert.equal(getCustomAuthConfiguration(makeEnv({ TEMPORARY_LOGIN: value })).valid, true);
+    assert.equal(getCustomAuthConfiguration(makeEnv({ TEMPORARY_LOGIN: value })).temporaryPassword, '');
+  }
+  const env = makeEnv({ TEMPORARY_LOGIN: 'Fixture-Backup-Access-27' });
+  const response = await createAuthConfigEndpoint()(createContext(makeRequest('/api/auth/config', { method: 'GET' }), env));
+  assert.deepEqual(await response.json(), { siteKey: 'turnstile-site-key', codeOnlyEnabled: false, temporaryLoginEnabled: true });
+  const member = await getTemporaryAuthMember(getCustomAuthConfiguration(env));
+  assert.match(member.memberHash, /^[a-f0-9]{64}$/);
+  assert.equal(findAllowedAuthMember(getCustomAuthConfiguration(env), member.name), null);
+});
+
+test('temporary login accepts either case without email, uses a real session, and is revoked by deleting or rotating its setting', async () => {
+  const env = makeEnv({ TEMPORARY_LOGIN: 'Fixture-Backup-Access-27', AUTH_EMAIL_SERVICE: undefined });
+  for (const password of ['fixture-backup-access-27', 'FIXTURE-BACKUP-ACCESS-27', 'Fixture-Backup-Access-27']) {
+    const store = createMemoryStore();
+    const endpoint = createTemporaryLoginEndpoint({ createStore: () => store, now: () => nowMs, verifyTurnstile: async () => ({ success: true }) });
+    const response = await endpoint(createContext(makeRequest('/api/auth/temporary-login', { body: { password, turnstileToken: 'fresh-token' } }), env));
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.user, { email: '', name: 'Temporary access' });
+    assert.match(response.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Strict/);
+    assert.equal(store.challenges.size, 0);
+    assert.equal(store.sessions.size, 1);
+    assert.doesNotMatch(JSON.stringify([...store.sessions.values()]), /fixture-backup|Fixture-Backup/);
+    const request = makeRequest('/api/auth/session', { method: 'GET', cookie: response.headers.get('set-cookie').split(';')[0] });
+    const authorize = nextEnv => authorizeCustomSessionRequest({ env: nextEnv, store, request, now: nowMs + 1000 });
+    const authorized = await authorize(env);
+    assert.equal(authorized.authorized, true);
+    assert.equal((await authorize({ ...env, TEMPORARY_LOGIN: password.toUpperCase() })).authorized, true);
+    for (const value of [undefined, '', 'Different-Backup-Password-29', 'short']) {
+      assert.equal((await authorize({ ...env, TEMPORARY_LOGIN: value })).authorized, false);
+    }
+    const presence = await createPresenceEndpoint({ createStore: () => store, now: () => nowMs + 1000 })(
+      { ...createContext(request, env), data: { authUser: authorized } });
+    assert.deepEqual((await presence.json()).users, []);
+    const middleware = createAuthMiddleware({ authorizeCustom: input => authorizeCustomSessionRequest({ ...input, store, now: nowMs + 1000 }) });
+    const context = { request: makeRequest('/api/private', { method: 'GET', cookie: response.headers.get('set-cookie').split(';')[0] }), env, data: {} };
+    context.next = () => createSessionEndpoint()(context);
+    assert.equal((await middleware(context)).status, 200);
+    assert.equal((await authorizeCustomSessionRequest({ env, store, request, now: nowMs + AUTH_SESSION_TTL_SECONDS * 1000 })).authorized, false);
+    await createLogoutEndpoint({ createStore: () => store, now: () => nowMs + 1000 })(createContext(makeRequest('/api/auth/logout', { cookie: response.headers.get('set-cookie').split(';')[0] }), env));
+    assert.equal((await authorize(env)).authorized, false);
+  }
+});
+
+test('temporary login rejects incorrect, malformed, cross-origin, disabled and unverified requests without issuing a cookie', async () => {
+  const env = makeEnv({ TEMPORARY_LOGIN: 'Fixture-Backup-Access-27' });
+  const store = createMemoryStore();
+  const endpoint = createTemporaryLoginEndpoint({ createStore: () => store, now: () => nowMs,
+    verifyTurnstile: async ({ token }) => ({ success: token === 'fresh-token', reason: 'invalid' }) });
+  const body = { password: env.TEMPORARY_LOGIN, turnstileToken: 'fresh-token' };
+  for (const [options, overrides, expected] of [
+    [{ body: { ...body, password: 'Incorrect-Backup-Access-27' } }, {}, 401],
+    [{ body: { ...body, password: 'temporary_login' } }, {}, 400],
+    [{ body: { ...body, password: 123456 } }, {}, 400],
+    [{ body: { ...body, password: 'a'.repeat(129) } }, {}, 400],
+    [{ body: { ...body, email: allowedEmails[0] } }, {}, 400],
+    [{ body: { ...body, turnstileToken: '' } }, {}, 400],
+    [{ body, requestOrigin: 'https://other.example' }, {}, 403],
+    [{ body, requestOrigin: null }, {}, 403],
+    [{ method: 'GET' }, {}, 405],
+    [{ body }, { TEMPORARY_LOGIN: '' }, 503],
+    [{ body }, { AUTH_HMAC_SECRET: '' }, 503],
+    [{ body }, { AUTH_ALLOWED_EMAILS: '' }, 503],
+    [{ body }, { AUTH_MODE: 'cloudflare_access' }, 404],
+  ]) {
+    const response = await endpoint(createContext(makeRequest('/api/auth/temporary-login', options), { ...env, ...overrides }));
+    assert.equal(response.status, expected);
+    assert.equal(response.headers.get('set-cookie'), null);
+  }
+  assert.equal(store.sessions.size, 0);
+});
+
+test('temporary login attempts are throttled independently and failures never log passwords', async () => {
+  const env = makeEnv({ TEMPORARY_LOGIN: 'Fixture-Backup-Access-27' });
+  for (const blockedAction of ['temporary-login-ip', 'temporary-login-global']) {
+    const store = createMemoryStore({ rateAllowed: input => input.action !== blockedAction });
+    const endpoint = createTemporaryLoginEndpoint({ createStore: () => store, verifyTurnstile: async () => { throw Error('must not verify after throttle'); } });
+    const response = await endpoint(createContext(makeRequest('/api/auth/temporary-login', { body: { password: env.TEMPORARY_LOGIN, turnstileToken: '' } }), env));
+    assert.equal(response.status, 429);
+    assert.equal(response.headers.get('retry-after'), '37');
+    assert.equal(store.sessions.size, 0);
+    assert.ok(store.rateCalls.every(call => call.action.startsWith('temporary-login-')));
+  }
+  for (const failure of ['security', 'database']) {
+    const logs = [], store = createMemoryStore();
+    if (failure === 'database') store.insertSession = async () => { throw Error(env.TEMPORARY_LOGIN); };
+    const endpoint = createTemporaryLoginEndpoint({ createStore: () => store, logger: { error: text => logs.push(text) },
+      verifyTurnstile: async () => ({ success: failure !== 'security', reason: 'unavailable' }) });
+    assert.equal((await endpoint(createContext(makeRequest('/api/auth/temporary-login', { body: { password: env.TEMPORARY_LOGIN, turnstileToken: 'fresh-token' } }), env))).status, 503);
+    assert.doesNotMatch(JSON.stringify(logs), /Fixture-Backup|fixture-backup/);
+  }
+});
+
+test('deleting the temporary setting leaves individual-email and original code-only sessions valid', async () => {
+  const env = makeEnv({ TEMPORARY_LOGIN: 'Fixture-Backup-Access-27', AUTH_CODE_ONLY_PIN: '123456' });
+  const store = createMemoryStore();
+  const emailHash = await hashAuthEmail({ email: allowedEmails[0], hmacSecret: env.AUTH_HMAC_SECRET });
+  const codeHash = (await getCodeOnlyAuthMember(getCustomAuthConfiguration(env))).memberHash;
+  for (const memberHash of [emailHash, codeHash]) {
+    const token = generateOpaqueToken(32);
+    await store.insertSession({ tokenHash: await hashSessionToken({ hmacSecret: env.AUTH_HMAC_SECRET, token }),
+      emailHash: memberHash, createdAt: nowMs / 1000, expiresAt: nowMs / 1000 + AUTH_SESSION_TTL_SECONDS, lastSeenAt: nowMs / 1000 });
+    const request = makeRequest('/api/private', { method: 'GET', cookie: `${AUTH_SESSION_COOKIE}=${token}` });
+    for (const nextEnv of [env, { ...env, TEMPORARY_LOGIN: undefined }]) {
+      assert.equal((await authorizeCustomSessionRequest({ env: nextEnv, request, store, now: nowMs + 1000 })).authorized, true);
+    }
   }
 });
 

@@ -109,6 +109,76 @@ test('one login field remains visible for normal links and the retired access fr
   }
 });
 
+test('temporary login is hidden and cannot be selected unless explicitly enabled by the server', async () => {
+  const app = await setup({ challenge: null });
+  assert.equal(app.get('temporary-login-toggle').hidden, true);
+  await app.get('temporary-login-toggle').fire('click');
+  assert.notEqual(app.get('login-email').getAttribute('type'), 'password');
+  assert.equal(app.requests.some(request => request.path === '/api/auth/temporary-login'), false);
+});
+
+test('temporary login masks its password, submits without email or PIN, and clears all client credential state', async () => {
+  const app = await setup({ challenge: null, temporaryLoginEnabled: true });
+  assert.equal(app.get('temporary-login-toggle').hidden, false);
+  await app.get('temporary-login-toggle').fire('click');
+  assert.equal(app.get('login-email').getAttribute('type'), 'password');
+  assert.equal(app.get('login-email').getAttribute('autocomplete'), 'off');
+  assert.equal(app.get('login-entry-label').textContent, 'TEMPORARY LOGIN');
+  assert.equal(app.get('login-progress').hidden, true);
+  assert.equal(app.get('login-privacy-note').hidden, true);
+  app.get('login-email').value = 'fixture-backup-access-27';
+  await app.get('login-email').fire('input');
+  await app.get('request-form').fire('submit');
+  const submitted = app.requests.find(request => request.path === '/api/auth/temporary-login');
+  assert.deepEqual(JSON.parse(submitted.options.body), { password: 'fixture-backup-access-27', turnstileToken: 'refreshed-turnstile-token' });
+  assert.equal(app.get('login-email').value, '');
+  assert.equal(app.storage.size, 0);
+  assert.equal(app.get('success-name').textContent, 'Temporary access');
+  assert.equal(app.get('login-card').dataset.stage, 'success');
+  assert.equal(app.requests.some(request => request.path === '/api/auth/request-code' || request.path === '/api/auth/code-only'), false);
+  await app.advance(2000);
+  assert.deepEqual(app.navigations, ['/depot?tab=movements#today']);
+});
+
+test('temporary login can return to normal email login and rejects short public labels', async () => {
+  const app = await setup({ challenge: null, temporaryLoginEnabled: true });
+  await app.get('temporary-login-toggle').fire('click');
+  app.get('login-email').value = 'temporary_login';
+  await app.get('login-email').fire('input');
+  await app.get('request-form').fire('submit');
+  assert.equal(app.get('request-button').disabled, true);
+  assert.equal(app.requests.some(request => request.options?.method === 'POST'), false);
+  await app.get('temporary-login-toggle').fire('click');
+  assert.equal(app.get('login-email').value, '');
+  assert.equal(app.get('login-email').getAttribute('type'), 'email');
+  assert.equal(app.get('login-progress').hidden, false);
+  assert.equal(app.get('login-privacy-note').hidden, false);
+  app.get('login-email').value = 'operator@flow-metro.com';
+  await app.get('login-email').fire('input');
+  await app.get('request-form').fire('submit');
+  assert.equal(app.requests.some(request => request.path === '/api/auth/request-code'), true);
+  assert.equal(app.get('login-card').dataset.stage, 'verify');
+});
+
+test('temporary requests cannot be repeated or switched while pending and clear passwords after errors', async () => {
+  const pending = deferred();
+  const app = await setup({ challenge: null, temporaryLoginEnabled: true, temporaryResponse: pending.promise });
+  await app.get('temporary-login-toggle').fire('click');
+  app.get('login-email').value = 'Fixture-Backup-Access-27';
+  const first = app.get('request-form').fire('submit');
+  await app.get('request-form').fire('submit');
+  await app.get('temporary-login-toggle').fire('click');
+  assert.equal(app.get('login-email').getAttribute('type'), 'password');
+  assert.equal(app.requests.filter(request => request.path === '/api/auth/temporary-login').length, 1);
+  assert.equal(app.get('login-email').value, '');
+  pending.resolve(response({ authenticated: false }, 401));
+  await first;
+  assert.equal(app.get('login-email').value, '');
+  assert.equal(app.get('login-card').dataset.stage, 'request');
+  assert.equal(app.navigations.length, 0);
+  assert.equal(app.get('temporary-login-toggle').disabled, false);
+});
+
 test('six digits in the email field submit only to server authentication after Continue', async () => {
   const app = await setup({ challenge: null, codeOnlyEnabled: true });
   app.get('login-email').value = ' 123456 ';
@@ -278,6 +348,8 @@ async function setup({
   sessionResponse = response({ authenticated: false }, 401),
   codeOnlyEnabled = false,
   codeOnlyResponse,
+  temporaryLoginEnabled = false,
+  temporaryResponse,
   securityReady = true,
 } = {}) {
   let now = START;
@@ -348,6 +420,7 @@ async function setup({
     'login-progress',
     'login-experience', 'login-shell', 'session-check', 'session-check-spinner', 'session-check-heading',
     'session-check-message', 'session-check-retry',
+    'temporary-login-toggle', 'login-entry-label', 'email-help', 'login-privacy-note', 'login-request-description',
   ];
   ids.forEach((id) => elements.set(id, new Element(id)));
   const get = (id) => elements.get(id);
@@ -406,7 +479,11 @@ async function setup({
     },
     fetch: async (path, options) => {
       requests.push({ path, options });
-      if (path === '/api/auth/config') return response({ siteKey: 'site-key', codeOnlyEnabled });
+      if (path === '/api/auth/config') return response({ siteKey: 'site-key', codeOnlyEnabled, temporaryLoginEnabled });
+      if (path === '/api/auth/temporary-login') return temporaryResponse || response({
+        authenticated: true, user: { name: 'Temporary access', email: '' },
+        expiresAt: new Date(START + 36000000).toISOString(),
+      });
       if (path === '/api/auth/code-only') return codeOnlyResponse || response({
         authenticated: true, user: { name: 'Code-only access', email: '' },
         expiresAt: new Date(START + 36000000).toISOString(),

@@ -40,9 +40,9 @@
           <div class="card-handle" aria-hidden="true"></div>
           <section class="auth-stage" id="request-stage" aria-labelledby="request-heading">
             <h3 id="request-heading">Sign in to continue</h3>
-            <p class="stage-description">Enter your approved FLOW work email.</p>
+            <p class="stage-description" id="login-request-description">Enter your approved FLOW work email.</p>
             <form id="request-form" novalidate>
-              <label class="field-label" for="login-email">FLOW METRO EMAIL</label>
+              <label class="field-label" id="login-entry-label" for="login-email">FLOW METRO EMAIL</label>
               <div class="email-field">
                 <svg class="mailbox-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM4 7l8 6 8-6" /></svg>
                 <input id="login-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="firstname.lastname@flow-metro.com" aria-describedby="email-help" required />
@@ -50,7 +50,8 @@
               <p class="email-help" id="email-help">Use your work email or another address approved for access.</p>
               <button class="primary-button" id="request-button" type="submit" disabled><span>Continue</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
             </form>
-            <p class="privacy-note">Codes are sent only to approved accounts.</p>
+            <button class="text-button" id="temporary-login-toggle" type="button" hidden>Temporary login</button>
+            <p class="privacy-note" id="login-privacy-note">Codes are sent only to approved accounts.</p>
           </section>
           <section class="auth-stage" id="verify-stage" aria-labelledby="verify-heading" hidden>
             <h3 id="verify-heading">Enter your code</h3>
